@@ -350,7 +350,58 @@ const STATE = {
 
 ---
 
-## 10. Checklist for Authoring a New Chapter Note
+## 10. Mobile Responsiveness & Touch Architecture
+
+Every chapter note must feel like a **native, responsive mobile learning app** on smartphones and tablets:
+
+### 1. Touch Swipe Navigation Engine
+All presentation decks must listen for native touch swipe events so users can flick between slides effortlessly:
+
+```javascript
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
+
+document.addEventListener('touchstart', (e) => {
+  touchStartX = e.changedTouches[0].screenX;
+  touchStartY = e.changedTouches[0].screenY;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  touchEndX = e.changedTouches[0].screenX;
+  touchEndY = e.changedTouches[0].screenY;
+  const diffX = touchEndX - touchStartX;
+  const diffY = touchEndY - touchStartY;
+  // Verify horizontal intent and minimum swipe delta
+  if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 45) {
+    if (state.currentView === 'presentation') {
+      if (diffX < 0) navigateSlideStep(1);   // Swipe Left -> Next Slide
+      else navigateSlideStep(-1);            // Swipe Right -> Prev Slide
+    }
+  }
+}, { passive: true });
+```
+
+### 2. Standard Mobile Breakpoints & Rules
+* **`@media (max-width: 900px)`:**
+  - Hide fixed floating side nav arrows (`.floating-slide-nav { display: none !important; }`).
+  - Collapse multi-panel simulators and revision grids.
+* **`@media (max-width: 768px)`:**
+  - Header wraps gracefully without clipping: view tabs span full width, portal buttons condense.
+  - Slide card padding reduced to `1.25rem 0.85rem` with `4px 6px` shadow offset.
+  - Slide title font size scales down from `2.75rem` to `1.75rem`.
+  - Multi-column grids (`content-grid-3`, `content-grid-2`, `content-grid-4`, code comparisons) collapse to `1fr`.
+  - Drawers (`tocDrawer`, `notesDrawer`) expand to full-screen mobile sheet (`width: 100vw; max-width: 100vw;`).
+  - Code blocks and tables maintain `-webkit-overflow-scrolling: touch; overflow-x: auto;`.
+* **`@media (max-width: 480px)`:**
+  - Slide title scales to `1.45rem`.
+  - Washi tape graphic scales down to `60px × 16px`.
+  - Touch targets maintain at least `44px` height with comfortable tap margins.
+
+---
+
+## 11. Checklist for Authoring a New Chapter Note
 
 Before marking a chapter note completed in `main.py`, verify that:
 
@@ -361,6 +412,9 @@ Before marking a chapter note completed in `main.py`, verify that:
 - [ ] **JetBrains Mono** is applied to all code blocks, curl examples, JSON wire formats, and headers.
 - [ ] All 5 standard learning views (`presentation`, `reader`, `revision`, `flashcards`, `quiz`) are functional.
 - [ ] At least 1–2 dynamic interactive simulators/validators are implemented.
+- [ ] Touch swipe gestures (`touchstart`, `touchend`) are bound for mobile slide navigation.
+- [ ] All multi-column grids collapse to single-column on screens `<= 768px`.
+- [ ] Header and slide cards adapt without horizontal scroll on 320px–480px phone screens.
 - [ ] All 20–25 slides contain deep pedagogical explanations directly reflecting the chapter transcript.
 - [ ] Header includes Back button to Curriculum Hub (`/`) and adjacent chapter cross-links.
 - [ ] Personal Notepad and Bookmarking correctly save and reload from `localStorage`.

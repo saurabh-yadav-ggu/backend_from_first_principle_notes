@@ -149,3 +149,49 @@
   background-size: 8px 3px;
   padding-bottom: 3px;
 }
+
+/* ==========================================================================
+   MOBILE & RESPONSIVE DESIGN ENHANCEMENTS
+   ========================================================================== */
+@media (max-width: 768px) {
+  body {
+    font-size: 1rem;
+    overflow-x: hidden;
+  }
+
+  .sketch-shadow-lg {
+    box-shadow: 4px 5px 0px 0px var(--ink-blue);
+  }
+
+  .sketch-shadow {
+    box-shadow: 3px 4px 0px 0px var(--ink-blue);
+  }
+
+  .sketch-border-thick {
+    border-width: 2px;
+  }
+
+  /* Touch momentum scrolling for code and tables */
+  pre, code, .sketch-code, table, .table-container {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Safe tap target sizes */
+  button, a.nav-portal-btn, .view-tab-btn {
+    min-height: 38px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 0.95rem;
+  }
+
+  .tape-top::before {
+    width: 65px;
+    height: 18px;
+    top: -9px;
+  }
+}

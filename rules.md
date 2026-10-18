@@ -103,29 +103,69 @@ All pages must preserve the custom **hand-drawn engineering sketch-note** look a
 9. **Maintain Clean Git Hygiene:**
    * Always respect `.gitignore`.
    * Never commit virtual environments (`venv/`), Python cache (`__pycache__/`), or scratch logs.
+10. **Implement Mobile Touch Gestures & Responsive Layouts:**
+   * Every presentation slide deck must support horizontal touch swipe gestures (`touchstart`, `touchend`) for navigation on mobile devices.
+   * All multi-column grids must gracefully stack to a single column on screens `<= 768px`.
+   * Card padding, box shadows, and heading font sizes must scale down on mobile screens to prevent cramped or broken layouts.
 
 ---
 
-## 4. ❌ WHAT YOU MUST NOT DO (Strict Prohibitions)
+## 4. 📱 Mobile Device Optimization Rules
+
+Every template in this repository must provide a **first-class smartphone & tablet experience** across all device viewports (from 320px compact phones to 820px tablets):
+
+### Mobile Layout & Typography
+* **Viewport Meta Tag:** Always specify `<meta name="viewport" content="width=device-width, initial-scale=1.0">`. Never set `user-scalable=no` (maintain accessibility zoom).
+* **Responsive Title Scaling:**
+  * Desktop `h1`: `2.5rem` to `3rem`.
+  * Mobile (`<= 768px`) `h1`: Scale down to `1.65rem` – `1.85rem` with `line-height: 1.2` so titles never wrap into 5 lines.
+  * Mobile (`<= 480px`) `h1`: Scale to `1.45rem` – `1.6rem`.
+* **Adaptive Card Padding & Shadows:**
+  * Desktop slide cards: `padding: 2.25rem; box-shadow: 8px 10px 0px 0px var(--ink-blue);`.
+  * Mobile slide cards: `padding: 1.25rem 0.85rem; box-shadow: 4px 6px 0px 0px var(--ink-blue); border-radius: 16px;`.
+* **Stacking Multi-Column Grids:**
+  * All `.content-grid-2`, `.content-grid-3`, `.content-grid-4`, and comparison panels MUST collapse to `grid-template-columns: 1fr` on screens `<= 768px`.
+* **Touch Targets:**
+  * Every button, tab, and interactive selector must have a minimum tap area of `44px × 44px` (or `min-height: 38px` with at least `8px` spacing between tap targets).
+* **Code & Table Scrolling:**
+  * All `<pre>`, `<code>`, `.sketch-code`, and `<table>` blocks must have `max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;`.
+* **Floating Arrow Controls:**
+  * Hide fixed side navigation buttons (`.floating-slide-nav`) on screens `<= 900px` so they never overlap slide text or interactive widgets. Rely on touch swipe gestures and bottom controls.
+* **Touch Swipe Navigation:**
+  * Support intuitive left/right swipe gestures on touchscreens:
+    - **Swipe Left:** Navigate to the next slide (`navigateSlideStep(1)`).
+    - **Swipe Right:** Navigate to the previous slide (`navigateSlideStep(-1)`).
+* **Mobile Drawers & Sheets:**
+  * On mobile (`<= 768px`), slide drawers (`tocDrawer`, `notesDrawer`) must expand to `width: 100vw; max-width: 100vw;` with full overlay backdrop.
+
+---
+
+## 5. ❌ WHAT YOU MUST NOT DO (Strict Prohibitions)
 
 1. **DO NOT Use Any Font Other Than Lexend & JetBrains Mono:**
    * Never let headings or body copy revert to browser default fonts (`Arial`, `Times New Roman`, system serif/sans).
    * Never use illegible cursive handwriting fonts for paragraph reading.
 2. **DO NOT Create Static, Passive Markdown Dumps:**
    * Never generate notes as flat walls of text without diagrams, interactive elements, or structured slide cards.
-3. **DO NOT Create Orphaned HTML Files in Root or Subdirectories:**
+3. **DO NOT Cause Horizontal Page Wobble / Overflow on Mobile:**
+   * Never allow `overflow-x` on `body` or container elements. The page must stay firmly locked at `100vw` without horizontal shifting while scrolling.
+4. **DO NOT Use Fixed Pixel Widths on Layout Containers:**
+   * Never use fixed widths like `width: 900px` or `width: 650px`. Always use `width: 100%; max-width: ...; min-width: 0;`.
+5. **DO NOT Cover Text With Floating Elements on Mobile:**
+   * Never leave desktop floating arrows or sticky overlays pinned over readable content on narrow screens.
+6. **DO NOT Create Orphaned HTML Files in Root or Subdirectories:**
    * Do NOT save `.html` files in the root folder (`d:\Learning\Backend_Notes\`) or inside `rest_api/` or `what_is backend_and_its_working/`.
    * Only `templates/` holds active HTML files.
-4. **DO NOT Leave Dead Links or Dummy Placeholders:**
+7. **DO NOT Leave Dead Links or Dummy Placeholders:**
    * Never create buttons that do nothing or links pointing to `href="#"`.
    * All navigation must link cleanly to `/`, `/what_is_backend`, `/rest_api`, or open active modals/drawers.
-5. **DO NOT Hardcode Hostnames or Absolute Machine Paths in Links:**
+8. **DO NOT Hardcode Hostnames or Absolute Machine Paths in Links:**
    * Never hardcode `http://localhost:8000` or `http://127.0.0.1:8000` inside template links.
    * Use clean relative paths (e.g. `href="/"`, `href="/rest_api"`).
-6. **DO NOT Break the Sketch-Note Identity:**
+9. **DO NOT Break the Sketch-Note Identity:**
    * Do NOT use generic, corporate Bootstrap or Tailwind default themes (e.g. plain rounded gray cards).
    * The washi tape, sketch borders, notebook lines, and ink colors are mandatory.
-7. **DO NOT Rely on Heavy External Front-End Frameworks for Notes:**
+10. **DO NOT Rely on Heavy External Front-End Frameworks for Notes:**
    * Do not introduce React, Vue, or Angular builds into the templates unless explicitly requested. Vanilla JS and CSS guarantee instant page loads, zero build steps, and lifetime maintainability.
-8. **DO NOT Delete Source Markdown Transcripts:**
+11. **DO NOT Delete Source Markdown Transcripts:**
    * The `.md` transcript files in `transcript/` and chapter directories are the source of truth for the curriculum and must always be preserved.

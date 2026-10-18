@@ -1261,8 +1261,145 @@
     @media (max-width: 900px) {
       .revision-grid { grid-template-columns: 1fr; }
       .view-tab-btn span { display: none; }
-      .floating-slide-nav { display: none; }
+      .floating-slide-nav { display: none !important; }
       .sim-body-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Mobile Enhancements: Tablets & Phones (max-width: 768px) */
+    @media (max-width: 768px) {
+      .container {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+      }
+      .app-header {
+        height: auto;
+        padding: 0.5rem 0.5rem;
+      }
+      .header-inner {
+        flex-wrap: wrap;
+        height: auto;
+        gap: 0.5rem;
+        justify-content: space-between;
+      }
+      .header-left {
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 0;
+      }
+      .chapter-badge-title {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.82rem;
+      }
+      .chapter-text {
+        font-size: 0.82rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 140px;
+      }
+      .view-tabs {
+        order: 3;
+        width: 100%;
+        justify-content: space-around;
+        padding: 0.2rem;
+        margin-top: 0.2rem;
+      }
+      .view-tab-btn {
+        padding: 0.35rem 0.45rem;
+        font-size: 0.8rem;
+      }
+      .header-right {
+        gap: 0.35rem;
+      }
+      .header-icon-btn {
+        width: 34px;
+        height: 34px;
+      }
+      .presentation-container {
+        padding: 0.75rem 0 5rem;
+      }
+      .slide-card {
+        padding: 1.25rem 0.85rem;
+        border-radius: 16px;
+        box-shadow: 4px 6px 0px 0px var(--ink-blue);
+        margin-top: 0.5rem;
+        margin-bottom: 1.25rem;
+      }
+      .slide-title {
+        font-size: 1.75rem;
+        line-height: 1.2;
+      }
+      .slide-intro, .slide-lead {
+        font-size: 1.02rem;
+        margin-bottom: 1rem;
+      }
+      .content-grid-3,
+      .content-grid-2,
+      .content-grid-4 {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      .card {
+        padding: 1rem;
+        border-radius: 14px;
+        box-shadow: 3px 4px 0px 0px var(--ink-blue);
+      }
+      .code-comparison-container,
+      .code-comparison-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .drawer-panel {
+        width: 100vw;
+        max-width: 100vw;
+      }
+      .search-modal-card {
+        width: 95%;
+        padding: 1.25rem 0.85rem;
+      }
+      .flashcard-stage {
+        padding: 0.75rem 0;
+      }
+      .flashcard {
+        min-height: 260px;
+        padding: 1.25rem;
+      }
+      .presentation-controls-bar {
+        height: auto;
+        padding: 0.5rem 0.75rem;
+      }
+      .controls-inner {
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+      pre, code, .sketch-code {
+        font-size: 0.8rem;
+        padding: 0.75rem;
+      }
+    }
+
+    /* Small Mobile Phones (max-width: 480px) */
+    @media (max-width: 480px) {
+      .slide-title {
+        font-size: 1.45rem;
+      }
+      .slide-step-badge {
+        font-size: 1.15rem;
+      }
+      .slide-topic-tag {
+        font-size: 0.75rem;
+      }
+      .card-title {
+        font-size: 1.05rem;
+      }
+      .quiz-option-btn {
+        font-size: 0.95rem;
+        padding: 0.65rem 0.85rem;
+      }
+      .tape-top::before {
+        width: 60px;
+        height: 16px;
+        top: -8px;
+      }
     }
   </style>
 </head>
@@ -4556,6 +4693,42 @@ POST /api/v1/users/:id/send-verification-email</code></pre>
 
     function escapeRegex(str) {
       return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    /* -------------------------------------------------------------------------
+       TOUCH SWIPE GESTURES FOR MOBILE
+       ------------------------------------------------------------------------- */
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      touchEndY = e.changedTouches[0].screenY;
+      handleTouchGesture();
+    }, { passive: true });
+
+    function handleTouchGesture() {
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+      // Ensure horizontal swipe is dominant and exceeds threshold
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 45) {
+        if (state.currentView === 'presentation') {
+          if (diffX < 0) {
+            // Swipe Left -> Next Slide
+            navigateSlideStep(1);
+          } else {
+            // Swipe Right -> Prev Slide
+            navigateSlideStep(-1);
+          }
+        }
+      }
     }
 
     /* -------------------------------------------------------------------------
