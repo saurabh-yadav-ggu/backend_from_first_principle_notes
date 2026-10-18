@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backend From First Principles — Sketch-Note Learning Portal</title>
+  <meta name="description" content="Master production-grade backend engineering from first principles: protocols, databases, auth, distributed systems, and observability through hand-drawn sketch notes.">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="Backend From First Principles — Sketch-Note Curriculum">
+  <meta property="og:description" content="Master production backend engineering with intuitive hand-drawn sketch notes, architecture diagrams, and interactive modules.">
+  <meta property="og:type" content="website">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Lexend (rules.md) & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+
+  <!-- Static CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/sketch-theme.css') }}">
+
+  <style>
+    :root {
+      --font-hand: 'Lexend', sans-serif;
+      --font-sans: 'Lexend', sans-serif;
+      --font-caveat: 'Lexend', sans-serif;
+      --font-architect: 'Lexend', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      background-color: var(--paper-note);
+      color: var(--ink-blue);
+      font-family: 'Lexend', sans-serif;
+      background-image: linear-gradient(rgba(180, 195, 220, 0.25) 1px, transparent 1px);
+      background-size: 100% 1.6em;
+      line-height: 1.6;
+      font-size: 1.05rem;
+    }
+
+    *, input, button, select, textarea {
+      font-family: 'Lexend', sans-serif;
+    }
+
+    code, pre, .font-mono, [class*="font-mono"] {
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    .font-lexend,
+    [class*="font-['Lexend']"],
+    [class*="font-['Patrick_Hand']"],
+    [class*="font-['Caveat']"],
+    [class*="font-['Architects_Daughter']"] {
+      font-family: 'Lexend', sans-serif !important;
+    }
+
+    /* Coffee Stain Ring Visual */
+    .coffee-stain {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 6px solid rgba(139, 90, 43, 0.12);
+      box-shadow: inset 0 0 12px rgba(139, 90, 43, 0.15);
+      pointer-events: none;
+      filter: blur(1px);
+    }
+    .coffee-stain::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      border: 3px solid rgba(139, 90, 43, 0.08);
+    }
+
+    /* Spiral Binding Effect */
+    .spiral-binding {
+      background-image: radial-gradient(#333 35%, transparent 40%);
+      background-size: 24px 24px;
+      background-position: 0 0;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--paper-note);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 5px;
+      border: 2px solid var(--paper-note);
+    }
+  </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden flex flex-col justify-between">
+
+  <!-- Left Side Spiral Holes (Desktop Only Visual) -->
+  <div class="hidden lg:block fixed left-2 top-0 bottom-0 w-8 z-40 pointer-events-none flex flex-col justify-around py-4">
+    <template id="spiral-loop">
+      <div class="w-5 h-5 rounded-full border-2 border-gray-700 bg-gray-900 shadow-inner my-2"></div>
+    </template>
+  </div>
+
+  <!-- NAVBAR -->
+  <header class="sticky top-0 z-50 bg-[#F4F1EA]/90 backdrop-blur-md border-b-2 border-[#0E2A5C]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+      
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-2 group">
+        <div class="relative bg-[#FFFFA5] px-3 py-1 sketch-border -rotate-2 group-hover:rotate-0 transition-transform">
+          <span class="font-bold text-xl text-[#0E2A5C] tracking-tight">Backend First Principles</span>
+          <span class="absolute -bottom-2 -right-2 bg-[#D12828] text-white text-[10px] font-bold px-1.5 py-0.2 sketch-border rotate-6">FastAPI</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav class="hidden md:flex items-center gap-6 text-lg font-medium">
+        <a href="#curriculum" class="hover:text-[#D12828] hover:underline decoration-wavy decoration-[#D12828] transition-all">Curriculum</a>
+        <a href="#hero" class="hover:text-[#D12828] hover:underline decoration-wavy decoration-[#D12828] transition-all">Architecture Flow</a>
+        <a href="#testimonials" class="hover:text-[#D12828] hover:underline decoration-wavy decoration-[#D12828] transition-all">Reviews</a>
+        <a href="/docs" target="_blank" class="hover:text-[#D12828] font-mono text-sm bg-[#FFFFA5] px-2.5 py-1 sketch-border text-[#0E2A5C] font-bold flex items-center gap-1 transition-all">
+          <span>API Docs (Swagger)</span>
+        </a>
+        <a href="https://youtube.com/playlist?list=PLui3EUkuMTPgZcV0QhQrOcwMPcBCcd_Q1&si=2rctmwtew8ThcJnU" target="_blank" class="hover:text-[#D12828] hover:underline decoration-wavy decoration-[#D12828] transition-all flex items-center gap-1">
+          <span>YouTube Playlist</span>
+          <svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>
+      </nav>
+
+      <!-- CTA -->
+      <div class="flex items-center gap-3">
+        <a href="#curriculum" class="bg-[#D12828] text-white px-5 py-2.5 sketch-border sketch-shadow hover:bg-[#0E2A5C] transition-all transform hover:-translate-y-0.5 active:translate-y-0 font-bold flex items-center gap-2 cursor-pointer text-lg">
+          <svg class="w-5 h-5 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          Explore Notes
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO SECTION -->
+    <section id="hero" class="relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
+      <!-- Background Doodles -->
+      <div class="absolute top-10 right-10 opacity-20 pointer-events-none hidden lg:block">
+        <svg class="w-48 h-48 stroke-[#0E2A5C] fill-none stroke-[1.5]" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" stroke-dasharray="4 4" />
+          <path d="M20 50 Q 50 10 80 50 T 20 50" />
+        </svg>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <!-- Left Column: Copy & CTAs -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- Badge -->
+          <div class="inline-flex items-center gap-2 bg-[#FFFFA5] text-[#0E2A5C] px-3 py-1 sketch-border -rotate-1 text-sm font-bold">
+            <svg class="w-4 h-4 stroke-[#D12828] fill-none stroke-2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Zero Magic Frameworks • Pure Systems Intuition
+          </div>
+
+          <!-- Main Title -->
+          <h1 class="text-4xl sm:text-6xl font-extrabold text-[#0E2A5C] tracking-tight leading-tight">
+            Stop Memorizing Frameworks. <br>
+            <span class="highlighter inline-block mt-1 transform -rotate-1">Understand Backend Systems</span> <br>
+            From First Principles.
+          </h1>
+
+          <!-- Subtitle -->
+          <p class="text-xl sm:text-2xl text-[#333333] max-w-2xl font-normal leading-relaxed">
+            A hand-sketched interactive guide to HTTP, TCP/IP, databases, authentication, distributed locks, caching strategies, and resilient microservices.
+          </p>
+
+          <!-- CTAs -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
+            <a href="#curriculum" class="bg-[#D12828] text-white text-xl px-7 py-3.5 sketch-border sketch-shadow-lg hover:bg-[#0E2A5C] transition-all text-center font-bold flex items-center justify-center gap-3 cursor-pointer group">
+              Explore Interactive Notes
+              <svg class="w-6 h-6 stroke-current fill-none stroke-2 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+
+            <button onclick="openVideoModal('https://www.youtube.com/embed/videoseries?list=PLui3EUkuMTPgZcV0QhQrOcwMPcBCcd_Q1')" class="bg-white text-[#0E2A5C] text-xl px-6 py-3.5 sketch-border sketch-shadow hover:bg-[#FFFFA5] transition-all flex items-center justify-center gap-2 font-bold cursor-pointer">
+              <svg class="w-6 h-6 stroke-[#D12828] fill-[#D12828]" viewBox="0 0 24 24">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Watch Course Playlist
+            </button>
+          </div>
+
+          <!-- Handwritten Quick Stats -->
+          <div class="pt-8 grid grid-cols-3 gap-4 border-t-2 border-dashed border-[#0E2A5C]/40 text-center">
+            <div class="rotate-1">
+              <div class="text-3xl font-bold text-[#D12828] font-['Lexend']">30+</div>
+              <div class="text-sm text-[#333]">Hand-Drawn Modules</div>
+            </div>
+            <div class="-rotate-1">
+              <div class="text-3xl font-bold text-[#0E2A5C] font-['Lexend']">100%</div>
+              <div class="text-sm text-[#333]">Language Agnostic</div>
+            </div>
+            <div class="rotate-2">
+              <div class="text-3xl font-bold text-[#0000FF] font-['Lexend']">4.9 / 5</div>
+              <div class="text-sm text-[#333]">Engineer Rating</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Hand-Drawn Abstract Architecture Diagram -->
+        <div class="lg:col-span-5 relative">
+          <!-- Tape Visual -->
+          <div class="tape-top"></div>
+          
+          <div class="bg-[#F4F1EA] p-6 sketch-border-thick sketch-shadow-lg relative rotate-1">
+            
+            <!-- Coffee Stain -->
+            <div class="coffee-stain -top-6 -right-6"></div>
+
+            <div class="flex items-center justify-between border-b-2 border-dashed border-[#0E2A5C] pb-3 mb-4">
+              <span class="font-bold text-lg text-[#0E2A5C]">System Flow: Request to DB</span>
+              <span class="text-xs bg-[#FFFFA5] px-2 py-0.5 sketch-border font-bold">FIG 1.1</span>
+            </div>
+
+            <!-- Diagram Canvas / Sketch Box -->
+            <div class="space-y-4 py-2 text-center font-['Lexend'] text-sm">
+              
+              <!-- Step 1: Browser -->
+              <div class="bg-white p-3 sketch-border flex items-center justify-between sketch-shadow hover:scale-102 transition-transform">
+                <div class="flex items-center gap-2">
+                  <svg class="w-6 h-6 stroke-[#0E2A5C] fill-none stroke-2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  <span class="font-bold">Client (Browser)</span>
+                </div>
+                <span class="text-xs text-[#D12828]">GET /api/v1/orders</span>
+              </div>
+
+              <!-- Arrow Down -->
+              <div class="flex justify-center my-1 text-[#0E2A5C]">
+                <svg class="w-6 h-8 stroke-current fill-none stroke-2 animate-bounce" viewBox="0 0 24 32">
+                  <path d="M12 0 v28 M6 22 l6 8 l6 -8"/>
+                </svg>
+              </div>
+
+              <!-- Step 2: Firewall / Nginx -->
+              <div class="bg-[#FFFFA5] p-3 sketch-border flex items-center justify-between sketch-shadow">
+                <div class="flex items-center gap-2">
+                  <svg class="w-6 h-6 stroke-[#0E2A5C] fill-none stroke-2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span class="font-bold">Reverse Proxy / TLS</span>
+                </div>
+                <span class="text-xs text-[#0000FF]">SSL Termination</span>
+              </div>
+
+              <!-- Arrow Down -->
+              <div class="flex justify-center my-1 text-[#0E2A5C]">
+                <svg class="w-6 h-8 stroke-current fill-none stroke-2 animate-bounce" viewBox="0 0 24 32">
+                  <path d="M12 0 v28 M6 22 l6 8 l6 -8"/>
+                </svg>
+              </div>
+
+              <!-- Step 3: Backend Instance & DB -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-3 sketch-border sketch-shadow">
+                  <div class="font-bold text-[#D12828]">Backend App</div>
+                  <div class="text-[11px] text-gray-600">Auth & Biz Rules</div>
+                </div>
+                <div class="bg-white p-3 sketch-border sketch-shadow">
+                  <div class="font-bold text-[#0E2A5C]">Database</div>
+                  <div class="text-[11px] text-gray-600">ACID Transaction</div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Sketchy Caption -->
+            <div class="mt-4 pt-3 border-t-2 border-dashed border-[#0E2A5C] text-xs text-center text-[#333] font-['Lexend'] text-base">
+              "Every request is just raw bytes flowing across socket file descriptors!"
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES / CURRICULUM SECTION -->
+    <section id="curriculum" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t-2 border-dashed border-[#0E2A5C]">
+      
+      <!-- Section Header -->
+      <div class="text-center space-y-4 max-w-3xl mx-auto mb-12">
+        <div class="inline-block bg-[#FFFFA5] px-4 py-1 sketch-border rotate-1 font-bold text-lg text-[#0E2A5C]">
+          Interactive Learning Matrix
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-[#0E2A5C]">
+          30 Chapters of Hand-Sketched Mastery
+        </h2>
+        <p class="text-xl text-[#333333]">
+          Search topics, filter by domain, read handwritten key takeaways, or launch video lectures.
+        </p>
+      </div>
+
+      <!-- Controls: Search & Filters -->
+      <div class="bg-white p-6 sketch-border sketch-shadow-lg mb-10 space-y-4 -rotate-0.5">
+        <div class="flex flex-col md:flex-row items-center gap-4">
+          
+          <!-- Search Bar -->
+          <div class="relative w-full md:w-1/2">
+            <svg class="w-6 h-6 absolute left-3 top-1/2 -translate-y-1/2 stroke-[#0E2A5C] fill-none stroke-2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="curriculumSearch" placeholder="Search chapters (e.g. HTTP, Redis, Auth, Indexes)..." 
+                   class="w-full bg-[#F4F1EA] pl-11 pr-4 py-2.5 sketch-border text-lg text-[#0E2A5C] focus:outline-none focus:bg-[#FFFFA5] transition-colors font-['Lexend']">
+          </div>
+
+          <!-- Category Filter Tabs -->
+          <div class="flex flex-wrap items-center gap-2 w-full md:w-1/2 justify-start md:justify-end">
+            <button onclick="filterCategory('all')" class="cat-btn active bg-[#0E2A5C] text-white px-3 py-1.5 sketch-border text-sm font-bold transition-all cursor-pointer" data-cat="all">All (30)</button>
+            <button onclick="filterCategory('network')" class="cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer" data-cat="network">Networking</button>
+            <button onclick="filterCategory('core')" class="cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer" data-cat="core">Core Logic</button>
+            <button onclick="filterCategory('data')" class="cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer" data-cat="data">Data & Storage</button>
+            <button onclick="filterCategory('system')" class="cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer" data-cat="system">System Ops</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Chapter Cards Grid -->
+      <div id="chaptersContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Injected via JavaScript below -->
+      </div>
+
+    </section>
+
+    <!-- TESTIMONIALS SECTION -->
+    <section id="testimonials" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t-2 border-dashed border-[#0E2A5C] relative">
+      
+      <!-- Header -->
+      <div class="text-center space-y-3 mb-12">
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-[#0E2A5C]">
+          Engineers Love The Sketch-Note Approach
+        </h2>
+        <p class="text-xl text-[#333]">Sticky notes left by senior engineers and tech leads.</p>
+      </div>
+
+      <!-- Sticky Notes Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <!-- Note 1 -->
+        <div class="bg-[#FFFFA5] p-6 sketch-border sketch-shadow-lg relative transform -rotate-2 hover:rotate-0 transition-transform">
+          <div class="tape-top"></div>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full border-2 border-[#0E2A5C] bg-white flex items-center justify-center">
+              <svg class="w-8 h-8 stroke-[#0E2A5C] fill-none stroke-2" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>
+            </div>
+            <div>
+              <div class="font-bold text-lg text-[#0E2A5C]">Alex Rivera</div>
+              <div class="text-xs text-[#D12828] font-bold">Staff Engineer @ Fintech</div>
+            </div>
+          </div>
+          <p class="text-lg text-[#333] font-['Lexend']">
+            "Finally an engineer who explains <span class="highlighter-red">WHY connection pooling works</span> without drowning you in 500 pages of framework config documentation."
+          </p>
+        </div>
+
+        <!-- Note 2 -->
+        <div class="bg-white p-6 sketch-border sketch-shadow-lg relative transform rotate-2 hover:rotate-0 transition-transform">
+          <div class="tape-top"></div>
+          <div class="coffee-stain -bottom-8 -right-8"></div>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full border-2 border-[#0E2A5C] bg-[#FFFFA5] flex items-center justify-center">
+              <svg class="w-8 h-8 stroke-[#0E2A5C] fill-none stroke-2" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>
+            </div>
+            <div>
+              <div class="font-bold text-lg text-[#0E2A5C]">Priya Sharma</div>
+              <div class="text-xs text-[#0000FF] font-bold">Senior Backend Dev</div>
+            </div>
+          </div>
+          <p class="text-lg text-[#333] font-['Lexend']">
+            "The hand-sketched breakdown of <span class="highlighter">OAuth2 vs JWT sessions</span> saved me weeks of confusion when redesigning our auth microservice."
+          </p>
+        </div>
+
+        <!-- Note 3 -->
+        <div class="bg-[#FFFFA5] p-6 sketch-border sketch-shadow-lg relative transform -rotate-1 hover:rotate-0 transition-transform">
+          <div class="tape-top"></div>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-full border-2 border-[#0E2A5C] bg-white flex items-center justify-center">
+              <svg class="w-8 h-8 stroke-[#0E2A5C] fill-none stroke-2" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>
+            </div>
+            <div>
+              <div class="font-bold text-lg text-[#0E2A5C]">David Chen</div>
+              <div class="text-xs text-[#D12828] font-bold">Principal Architect</div>
+            </div>
+          </div>
+          <p class="text-lg text-[#333] font-['Lexend']">
+            "I make every junior dev on my team read Chapter 21 on <span class="highlighter">Graceful Shutdowns</span> before pushing to production!"
+          </p>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- FINAL CTA SECTION -->
+    <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      <div class="bg-[#FFFFA5] p-8 sm:p-12 sketch-border-thick sketch-shadow-lg text-center relative rotate-1">
+        
+        <div class="space-y-4">
+          <h2 class="text-3xl sm:text-5xl font-extrabold text-[#0E2A5C]">
+            Ready to Build Rock-Solid Backend Systems?
+          </h2>
+          <p class="text-xl text-[#333] max-w-2xl mx-auto">
+            Join 10,000+ engineers reading through backend fundamentals from first principles today.
+          </p>
+          <div class="pt-4">
+            <a href="#curriculum" class="inline-block bg-[#D12828] text-white text-2xl px-8 py-4 sketch-border sketch-shadow-lg hover:bg-[#0E2A5C] transition-all font-bold cursor-pointer">
+              Start Reading Now →
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-[#0E2A5C] text-[#F4F1EA] border-t-4 border-[#333] pt-12 pb-8 px-4 sm:px-6 lg:px-8 relative">
+    
+    <!-- Top Spiral Binding Border Visual -->
+    <div class="absolute -top-3 left-0 right-0 h-6 spiral-binding opacity-60"></div>
+
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-sm">
+      
+      <!-- Col 1: About -->
+      <div class="space-y-3">
+        <div class="font-bold text-xl text-[#FFFFA5] font-['Lexend'] text-2xl">Backend From First Principles</div>
+        <p class="text-gray-300 leading-relaxed">
+          Hand-crafted educational portal dedicated to demystifying backend engineering through sketch-note visual diagrams. Powered by FastAPI.
+        </p>
+      </div>
+
+      <!-- Col 2: Topics -->
+      <div>
+        <div class="font-bold text-lg text-[#FFFFA5] mb-3">Core Topics</div>
+        <ul class="space-y-2 text-gray-300">
+          <li><a href="#curriculum" onclick="filterCategory('network')" class="hover:text-[#FFFFA5]">HTTP & TCP Networking</a></li>
+          <li><a href="#curriculum" onclick="filterCategory('core')" class="hover:text-[#FFFFA5]">Auth, JWT & Sessions</a></li>
+          <li><a href="#curriculum" onclick="filterCategory('data')" class="hover:text-[#FFFFA5]">Databases & Caching</a></li>
+          <li><a href="#curriculum" onclick="filterCategory('system')" class="hover:text-[#FFFFA5]">Observability & Resilience</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 3: Navigation -->
+      <div>
+        <div class="font-bold text-lg text-[#FFFFA5] mb-3">Navigation</div>
+        <ul class="space-y-2 text-gray-300">
+          <li><a href="#hero" class="hover:text-[#FFFFA5]">Overview</a></li>
+          <li><a href="#curriculum" class="hover:text-[#FFFFA5]">30 Chapter Curriculum</a></li>
+          <li><a href="/what_is_backend" class="hover:text-[#FFFFA5]">Chapter 01: What is a Backend</a></li>
+          <li><a href="/rest_api" class="hover:text-[#FFFFA5]">REST API Masterclass</a></li>
+          <li><a href="/docs" class="hover:text-[#FFFFA5]">FastAPI OpenAPI Specs</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Social SVG Sketch Icons -->
+      <div>
+        <div class="font-bold text-lg text-[#FFFFA5] mb-3">Connect</div>
+        <div class="flex items-center gap-4">
+          <!-- Github -->
+          <a href="#" class="p-2 border border-gray-500 rounded hover:bg-[#FFFFA5] hover:text-[#0E2A5C] transition-colors" title="GitHub">
+            <svg class="w-6 h-6 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          </a>
+          <!-- Twitter -->
+          <a href="#" class="p-2 border border-gray-500 rounded hover:bg-[#FFFFA5] hover:text-[#0E2A5C] transition-colors" title="Twitter">
+            <svg class="w-6 h-6 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg>
+          </a>
+          <!-- YouTube -->
+          <a href="https://youtube.com/playlist?list=PLui3EUkuMTPgZcV0QhQrOcwMPcBCcd_Q1&si=2rctmwtew8ThcJnU" target="_blank" class="p-2 border border-gray-500 rounded hover:bg-[#FFFFA5] hover:text-[#0E2A5C] transition-colors" title="YouTube Playlist">
+            <svg class="w-6 h-6 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="max-w-7xl mx-auto pt-6 border-t border-gray-700 text-center text-xs text-gray-400">
+      © 2026 Backend From First Principles. All hand-drawn sketch notes reserved. Built with FastAPI.
+    </div>
+  </footer>
+
+  <!-- MODAL: CHAPTER NOTES PREVIEW -->
+  <div id="notesModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-[#F4F1EA] sketch-border-thick sketch-shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative rotate-0">
+      
+      <!-- Close Button -->
+      <button onclick="closeModal('notesModal')" class="absolute top-4 right-4 bg-[#D12828] text-white p-1.5 sketch-border hover:bg-[#0E2A5C] transition-colors cursor-pointer">
+        <svg class="w-5 h-5 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <div class="flex items-center gap-2 mb-2">
+        <span id="modalChapterBadge" class="bg-[#FFFFA5] text-[#0E2A5C] font-bold px-2 py-0.5 sketch-border text-xs">CH 01</span>
+        <span id="modalCategoryBadge" class="text-xs font-bold text-[#D12828] uppercase tracking-wider">Networking</span>
+      </div>
+
+      <h3 id="modalTitle" class="text-2xl font-bold text-[#0E2A5C] mb-4">Chapter Title</h3>
+
+      <div class="space-y-4 text-base text-[#333]">
+        <div class="bg-white p-4 sketch-border">
+          <div class="font-bold text-[#0E2A5C] mb-1">Concept Summary:</div>
+          <p id="modalSummary">Summary details...</p>
+        </div>
+
+        <div class="bg-[#FFFFA5] p-4 sketch-border">
+          <div class="font-bold text-[#0E2A5C] mb-2">Key Engineering Takeaways:</div>
+          <ul id="modalTakeaways" class="list-disc pl-5 space-y-1">
+            <!-- Takeaways inserted here -->
+          </ul>
+        </div>
+
+        <div id="modalActionLinkContainer" class="pt-2">
+          <!-- Injected via JavaScript -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: YOUTUBE VIDEO PLAYER -->
+  <div id="videoModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-[#0E2A5C] p-2 sketch-border-thick sketch-shadow-lg w-full max-w-4xl relative">
+      <button onclick="closeModal('videoModal')" class="absolute -top-10 right-0 text-white hover:text-[#D12828] font-bold text-lg flex items-center gap-1 cursor-pointer">
+        <span>Close Player</span>
+        <svg class="w-6 h-6 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <div class="aspect-video w-full">
+        <iframe id="videoIframe" class="w-full h-full sketch-border" src="" title="Course Lecture Player" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client-side Scripts -->
+  <script src="{{ url_for('static', path='js/api.js') }}"></script>
+  <script>
+    // 30-Chapter Curriculum Data (Initial Fallback Data)
+    let CHAPTERS = [
+      { id: 1, title: "How Backend Systems Work Behind the Scenes", category: "network", summary: "Request routing from browser network hops, firewalls, and ISP routing over the Internet to an AWS-hosted backend server.", takeaways: ["Request packet flow across sockets", "Network firewalls and entry proxies", "Client-server raw message cycle"] },
+      { id: 2, title: "The HTTP Protocol", category: "network", summary: "HTTP semantics, request/response headers, pre-flight CORS flows, caching headers, SSL/TLS, and HTTP/1.1 vs HTTP/2 vs HTTP/3.", takeaways: ["CORS Simple vs Pre-flight requests", "HTTP/2 multiplexing vs HTTP/3 QUIC", "ETags and cache validation rules"] },
+      { id: 3, title: "Routing Mechanics", category: "core", summary: "Mapping incoming URLs and methods to application logic, path/query parameters, wildcard/regex routing, versioning, and deprecation.", takeaways: ["Dynamic path params vs Query params", "API versioning (URI, Header, Media)", "Route grouping for middlewares"] },
+      { id: 4, title: "Serialization & Deserialization", category: "core", summary: "Translating native data structures into transmittable wire formats (JSON, XML vs Protocol Buffers) and examining performance trade-offs.", takeaways: ["JSON text vs Protobuf binary", "Schema validation & injection risks", "Custom serialization handlers"] },
+      { id: 5, title: "Authentication & Authorization", category: "core", summary: "Sessions, JWTs, OAuth2/OIDC, RBAC/ABAC/ReBAC, password salting/hashing, and timing attack mitigation.", takeaways: ["Stateful sessions vs Stateless JWTs", "OAuth2 flows and refresh tokens", "Preventing timing attack side-channels"] },
+      { id: 6, title: "Input Validation & Transformation", category: "core", summary: "Sanitizing user input via syntactic, semantic, and type validations alongside data casting and normalization rules.", takeaways: ["Syntactic vs Semantic checks", "Fail-fast server gateway validation", "Sanitizing input to prevent SQLi/XSS"] },
+      { id: 7, title: "Middleware Architecture", category: "core", summary: "Designing pre-request and post-response interceptor pipelines for logging, auth checks, rate limiting, and compression.", takeaways: ["Middleware execution ordering", "Short-circuiting request chains", "Global error interceptor hooks"] },
+      { id: 8, title: "Request Context", category: "core", summary: "Managing temporary request-scoped state (auth tokens, correlation IDs, trace IDs, timeouts, and cancellation signals).", takeaways: ["Correlation IDs for distributed tracing", "Context timeout propagation", "Request-scoped memory cleanup"] },
+      { id: 9, title: "Handlers & Controllers", category: "core", summary: "Structuring presentation layers with MVC principles, decoupling business logic into services, and standardizing responses.", takeaways: ["Controller vs Service layer separation", "Centralized response envelope schemas", "Error propagation patterns"] },
+      { id: 10, title: "CRUD API Design", category: "core", summary: "Implementing clean CRUD operations with proper HTTP verbs, status codes, pagination models, sorting, and filtering.", takeaways: ["Offset vs Cursor pagination", "HTTP verb semantic mapping", "Handling partial resource updates"] },
+      { id: 11, title: "RESTful Architecture & Best Practices", category: "core", summary: "Roy Fielding constraints, HTTP method semantics, idempotency proofs, plural nouns, nested endpoints, and Sane Defaults.", takeaways: ["Roy Fielding 6 architectural constraints", "State machine & mathematical idempotency proofs", "PUT vs PATCH mutation semantics", "Plural resource URLs & query pagination"] },
+      { id: 12, title: "Databases: Relational vs NoSQL", category: "data", summary: "Relational vs NoSQL paradigms, ACID guarantees, CAP theorem, indexing, query optimization, connection pooling, and ORMs.", takeaways: ["ACID vs BASE trade-offs", "B-Tree vs Hash indexing mechanics", "Connection pool sizing rules"] },
+      { id: 13, title: "Business Logic Layer (BLL)", category: "core", summary: "Encapsulating core domain rules away from transport controllers and storage persistence using SOLID principles.", takeaways: ["Layered architectural boundary setup", "Domain models vs DTOs", "Domain validation rule engines"] },
+      { id: 14, title: "Caching Strategies", category: "data", summary: "Optimizing throughput with In-Memory (Redis) & Distributed caching, eviction policies (LRU/TTL), and multi-level caching.", takeaways: ["Cache-aside vs Write-through patterns", "LRU/TTL eviction strategies", "Mitigating cache stampede & avalanche"] },
+      { id: 15, title: "Transactional Emails", category: "core", summary: "Building reliable notification pipelines: HTML email anatomy, dynamic parameters, template rendering, and delivery queues.", takeaways: ["Email body CTA formatting", "Asynchronous email queuing", "Delivery status webhooks"] },
+      { id: 16, title: "Task Queues & Background Workers", category: "system", summary: "Offloading heavy computations asynchronously using producer-consumer job queues (BullMQ/Celery), cron jobs, and retries.", takeaways: ["Producer-Broker-Consumer pipelines", "Dead-letter queues & retries", "Task prioritization rules"] },
+      { id: 17, title: "Elasticsearch & Full-Text Search", category: "data", summary: "Inverted indices, TF-IDF / BM25 algorithms, shards, segments, relevance scoring, and log aggregation with Kibana.", takeaways: ["Inverted index vs Table scanning", "Shards & segment management", "Fuzzy matching & aggregations"] },
+      { id: 18, title: "Global Error Handling", category: "system", summary: "Designing predictable global exception handlers, custom error classes, graceful degradation, and user error masking.", takeaways: ["Fail-fast vs Fail-safe strategies", "Obfuscating sensitive stack traces", "Sentry & alerting triggers"] },
+      { id: 19, title: "Configuration & Secret Management", category: "system", summary: "Decoupling runtime code from environment configuration, dynamic feature flags, secret vaults, and EnV isolation.", takeaways: ["12-Factor config isolation", "Secure secret storage (KMS/Vault)", "Dynamic feature flag toggling"] },
+      { id: 20, title: "Logging, Monitoring & Observability", category: "system", summary: "Structured JSON logs, metrics (Prometheus/Grafana), APM tools, and distributed tracing across microservices.", takeaways: ["Structured logging levels", "Three pillars: Logs, Metrics, Traces", "Alerting thresholds & SLA tracking"] },
+      { id: 21, title: "Graceful Shutdowns", category: "system", summary: "Handling process termination signals (SIGTERM/SIGINT) safely by stopping incoming traffic and draining inflight requests.", takeaways: ["SIGTERM vs SIGKILL signal handling", "Draining inflight requests cleanly", "Closing DB connections and file handles"] },
+      { id: 22, title: "System Security & Hardening", category: "system", summary: "Mitigating OWASP Top 10 vulnerabilities: SQLi, XSS, CSRF, broken access control, rate limiting, and CSP policies.", takeaways: ["Principle of Least Privilege", "Mitigating SQLi & XSS", "Security headers & audit trails"] },
+      { id: 23, title: "Scaling & Performance Optimization", category: "system", summary: "Optimizing throughput and latency: resolving N+1 query bugs, batch processing, memory leak detection, and payload compression.", takeaways: ["Eliminating N+1 query bugs", "Horizontal vs Vertical scaling", "Profiling CPU & memory bottlenecks"] },
+      { id: 24, title: "Concurrency & Parallelism", category: "system", summary: "Non-blocking async IO vs multi-threading, CPU-bound vs IO-bound workloads, race conditions, mutexes, and atomicity.", takeaways: ["IO-bound vs CPU-bound execution", "Event loops vs Thread pools", "Preventing race conditions & deadlocks"] },
+      { id: 25, title: "Object Storage & Large Files", category: "data", summary: "Managing unstructured blob storage (AWS S3), presigned URLs, streaming file downloads/uploads, and multipart chunking.", takeaways: ["Presigned URLs for secure upload", "Streaming chunk buffers", "Multipart parallel uploads"] },
+      { id: 26, title: "Real-time Backend Systems", category: "network", summary: "Bidirectional real-time communication: WebSockets, Server-Sent Events (SSE), HTTP Long Polling, and Pub/Sub brokers.", takeaways: ["WebSockets vs SSE vs Long-polling", "Scaling sockets with Redis Pub/Sub", "Heartbeats & reconnection logic"] },
+      { id: 27, title: "Testing & Code Quality", category: "system", summary: "Constructing robust test suites: Unit, Integration, E2E, TDD workflows, CI/CD pipelines, and cyclomatic complexity metrics.", takeaways: ["Testing Pyramid ratio strategy", "TDD red-green-refactor loop", "Cyclomatic complexity limits"] },
+      { id: 28, title: "The 12-Factor App Methodology", category: "system", summary: "Adhering to cloud-native application design rules for portability, explicit dependencies, stateless processes, and dev/prod parity.", takeaways: ["Stateless processes & disposability", "Dev/prod parity guidelines", "Backing service binding"] },
+      { id: 29, title: "OpenAPI & API-First Development", category: "core", summary: "Defining machine-readable API contracts before coding: Swagger/OpenAPI specs, automated client generation, and mock servers.", takeaways: ["API-First development workflow", "OpenAPI 3.1 schema definitions", "Client code generation tools"] },
+      { id: 30, title: "Webhooks Architecture", category: "network", summary: "Designing event-driven outbound push notifications: HTTP callback receivers, event signatures, idempotency, and retries.", takeaways: ["API Polling vs Webhook push models", "HMAC secret signature verification", "Exponential backoff retry queues"] }
+    ];
+
+    // State
+    let activeCategory = 'all';
+    let searchQuery = '';
+    let completedChapters = new Set();
+
+    // DOM Elements
+    const chaptersContainer = document.getElementById('chaptersContainer');
+    const searchInput = document.getElementById('curriculumSearch');
+
+    // Render Chapters
+    function renderChapters() {
+      chaptersContainer.innerHTML = '';
+
+      const filtered = CHAPTERS.filter(ch => {
+        const matchesCategory = activeCategory === 'all' || ch.category === activeCategory;
+        const matchesSearch = ch.title.toLowerCase().includes(searchQuery) ||
+                              ch.summary.toLowerCase().includes(searchQuery) ||
+                              ch.id.toString() === searchQuery;
+        return matchesCategory && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        chaptersContainer.innerHTML = `
+          <div class="col-span-full text-center py-12 bg-white sketch-border">
+            <div class="text-2xl font-bold text-[#D12828] mb-2 font-['Lexend']">No sketch notes matched your query!</div>
+            <p class="text-[#333]">Try searching for "HTTP", "Redis", "Auth", or "Database".</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach((ch, idx) => {
+        const isDone = completedChapters.has(ch.id);
+        const rotationClass = idx % 3 === 0 ? '-rotate-1' : (idx % 2 === 0 ? 'rotate-1' : 'rotate-0');
+        
+        let statusBadge = '';
+        let quickAction = '';
+        if (ch.id === 11) {
+          statusBadge = '<span class="bg-[#D12828] text-white text-[10px] font-bold px-1.5 py-0.2 sketch-border">★ MASTERCLASS READY</span>';
+          quickAction = '<a href="/rest_api" class="text-xs bg-[#D12828] text-white px-2.5 py-1 sketch-border hover:bg-[#0E2A5C] transition-colors font-bold flex items-center gap-1">Open 25 Slides →</a>';
+        } else if (ch.id === 1) {
+          statusBadge = '<span class="bg-[#0E2A5C] text-white text-[10px] font-bold px-1.5 py-0.2 sketch-border">★ NOTES READY</span>';
+          quickAction = '<a href="/what_is_backend" class="text-xs bg-[#0E2A5C] text-white px-2.5 py-1 sketch-border hover:bg-[#D12828] transition-colors font-bold flex items-center gap-1">Open Notes →</a>';
+        } else if (ch.id === 2) {
+          statusBadge = '<span class="bg-[#0000FF] text-white text-[10px] font-bold px-1.5 py-0.2 sketch-border">★ TRANSCRIPT</span>';
+          quickAction = '<a href="/api/transcripts/http" target="_blank" class="text-xs bg-[#0000FF] text-white px-2.5 py-1 sketch-border hover:bg-[#0E2A5C] transition-colors font-bold flex items-center gap-1">View Transcript →</a>';
+        }
+
+        const card = document.createElement('div');
+        card.className = `bg-white p-6 sketch-border sketch-shadow flex flex-col justify-between transform ${rotationClass} hover:rotate-0 transition-transform relative group`;
+
+        card.innerHTML = `
+          ${idx % 4 === 0 ? '<div class="tape-top"></div>' : ''}
+
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-1.5">
+                <span class="bg-[#FFFFA5] text-[#0E2A5C] text-xs font-bold px-2 py-0.5 sketch-border font-mono">
+                  CH ${ch.id < 10 ? '0' + ch.id : ch.id}
+                </span>
+                ${statusBadge}
+              </div>
+              <button onclick="toggleDone(${ch.id})" class="text-xs font-bold px-2 py-0.5 sketch-border cursor-pointer transition-colors ${isDone ? 'bg-[#D12828] text-white' : 'bg-[#F4F1EA] text-[#333] hover:bg-[#FFFFA5]'}">
+                ${isDone ? '✓ Read' : '+ Mark Read'}
+              </button>
+            </div>
+
+            <h3 class="text-xl font-bold text-[#0E2A5C] group-hover:text-[#D12828] transition-colors mb-2">
+              ${ch.title}
+            </h3>
+
+            <p class="text-sm text-[#333] leading-relaxed mb-4 font-['Lexend']">
+              ${ch.summary}
+            </p>
+          </div>
+
+          <div>
+            ${quickAction ? `<div class="mb-3">${quickAction}</div>` : ''}
+            <div class="pt-3 border-t-2 border-dashed border-[#0E2A5C]/30 flex items-center justify-between text-xs font-bold">
+              <span class="uppercase text-[#D12828]">${ch.category}</span>
+              <div class="flex items-center gap-2">
+                <button onclick="openNotesModal(${ch.id})" class="text-[#0E2A5C] hover:underline cursor-pointer flex items-center gap-1">
+                  Read Notes
+                </button>
+                <button onclick="openVideoModal('https://www.youtube.com/embed/videoseries?list=PLui3EUkuMTPgZcV0QhQrOcwMPcBCcd_Q1')" class="text-[#0000FF] hover:underline cursor-pointer flex items-center gap-1" title="Watch Playlist Video">
+                  <svg class="w-4 h-4 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        chaptersContainer.appendChild(card);
+      });
+    }
+
+    // Filter Trigger
+    function filterCategory(cat) {
+      activeCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = 'cat-btn active bg-[#0E2A5C] text-white px-3 py-1.5 sketch-border text-sm font-bold transition-all cursor-pointer';
+        } else {
+          btn.className = 'cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer';
+        }
+      });
+      renderChapters();
+    }
+
+    // Toggle Read Status
+    function toggleDone(id) {
+      if (completedChapters.has(id)) {
+        completedChapters.delete(id);
+      } else {
+        completedChapters.add(id);
+      }
+      renderChapters();
+    }
+
+    // Search Input Listener
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      renderChapters();
+    });
+
+    // Modal Triggers
+    function openNotesModal(id) {
+      const ch = CHAPTERS.find(item => item.id === id);
+      if (!ch) return;
+
+      document.getElementById('modalChapterBadge').textContent = `CH ${ch.id < 10 ? '0' + ch.id : ch.id}`;
+      document.getElementById('modalCategoryBadge').textContent = ch.category;
+      document.getElementById('modalTitle').textContent = ch.title;
+      document.getElementById('modalSummary').textContent = ch.summary;
+      
+      const takeawaysList = document.getElementById('modalTakeaways');
+      takeawaysList.innerHTML = ch.takeaways.map(t => `<li>${t}</li>`).join('');
+
+      const actionContainer = document.getElementById('modalActionLinkContainer');
+      if (ch.id === 11) {
+        actionContainer.innerHTML = `
+          <a href="/rest_api" class="inline-flex items-center gap-2 bg-[#D12828] text-white px-4 py-2 sketch-border sketch-shadow font-bold hover:bg-[#0E2A5C] transition-colors">
+            <span>Launch Complete REST API Masterclass (25 Slides & Textbook)</span>
+            <span>→</span>
+          </a>
+        `;
+      } else if (ch.id === 1) {
+        actionContainer.innerHTML = `
+          <a href="/what_is_backend" class="inline-flex items-center gap-2 bg-[#0E2A5C] text-white px-4 py-2 sketch-border sketch-shadow font-bold hover:bg-[#D12828] transition-colors">
+            <span>Open Chapter 01 Interactive Notes</span>
+            <span>→</span>
+          </a>
+        `;
+      } else if (ch.id === 2) {
+        actionContainer.innerHTML = `
+          <a href="/api/transcripts/http" target="_blank" class="inline-flex items-center gap-2 bg-[#0000FF] text-white px-4 py-2 sketch-border sketch-shadow font-bold hover:bg-[#0E2A5C] transition-colors">
+            <span>Read HTTP Transcript (FastAPI Endpoint)</span>
+            <span>→</span>
+          </a>
+        `;
+      } else {
+        actionContainer.innerHTML = `
+          <span class="text-xs text-gray-500 font-mono italic">Folder: /${ch.folder || ''}/ (Reserved for upcoming lecture transcript)</span>
+        `;
+      }
+
+      document.getElementById('notesModal').classList.remove('hidden');
+      document.getElementById('notesModal').classList.add('flex');
+    }
+
+    function openVideoModal(url) {
+      document.getElementById('videoIframe').src = url;
+      document.getElementById('videoModal').classList.remove('hidden');
+      document.getElementById('videoModal').classList.add('flex');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+      document.getElementById(modalId).classList.remove('flex');
+      if (modalId === 'videoModal') {
+        document.getElementById('videoIframe').src = '';
+      }
+    }
+
+    // Initialize with FastAPI dynamic API hydration
+    window.addEventListener('DOMContentLoaded', () => {
+      renderChapters();
+      
+      // Hydrate from FastAPI endpoint if available
+      if (window.BackendAPI) {
+        window.BackendAPI.getChapters().then(apiData => {
+          if (apiData && Array.isArray(apiData) && apiData.length > 0) {
+            CHAPTERS = apiData;
+            renderChapters();
+          }
+        }).catch(err => {
+          console.log("Running in offline/embedded mode:", err);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

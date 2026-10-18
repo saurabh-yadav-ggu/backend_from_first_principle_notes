@@ -1,0 +1,151 @@
+/* ==========================================================================
+   SKETCH-NOTE DESIGN SYSTEM — FastAPI Shared Static CSS
+   "Backend from First Principles" Curriculum & Masterclass Notes
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@400;600;700&family=Lexend:wght@100..900&family=Patrick+Hand&display=swap');
+
+:root {
+  --paper-note: #F4F1EA;
+  --paper-card: #FFFFFF;
+  --ink-blue: #0E2A5C;
+  --ink-subtle: #1e3a6d;
+  --pencil-grey: #333333;
+  --pencil-light: #555555;
+  --alert-red: #D12828;
+  --alert-red-subtle: rgba(209, 40, 40, 0.12);
+  --highlighter-yellow: #FFFFA5;
+  --highlighter-green: #d4f8d4;
+  --ballpoint-blue: #0000FF;
+  --border-dark: #0E2A5C;
+  --border-subtle: #cbd5e1;
+
+  --font-hand: 'Lexend', sans-serif;
+  --font-sans: 'Lexend', sans-serif;
+  --font-caveat: 'Lexend', sans-serif;
+  --font-architect: 'Lexend', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Notebook ruling lines background */
+.notebook-bg {
+  background-color: var(--paper-note);
+  background-image: linear-gradient(rgba(180, 195, 220, 0.25) 1px, transparent 1px);
+  background-size: 100% 1.6em;
+}
+
+/* Wobbly Hand-Drawn Borders */
+.sketch-border {
+  border: 2px solid var(--ink-blue);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+}
+
+.sketch-border-sm {
+  border: 1.5px solid var(--ink-blue);
+  border-radius: 255px 12px 225px 12px / 12px 225px 12px 255px;
+}
+
+.sketch-border-thick {
+  border: 3px solid var(--ink-blue);
+  border-radius: 240px 20px 210px 18px / 18px 210px 18px 240px;
+}
+
+.sketch-border-red {
+  border: 2.5px solid var(--alert-red);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+}
+
+.sketch-border-blue {
+  border: 2.5px solid var(--ballpoint-blue);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+}
+
+/* Sketch Box-Shadows */
+.sketch-shadow {
+  box-shadow: 4px 5px 0px 0px var(--ink-blue);
+}
+
+.sketch-shadow-sm {
+  box-shadow: 2px 3px 0px 0px var(--ink-blue);
+}
+
+.sketch-shadow-lg {
+  box-shadow: 7px 8px 0px 0px var(--ink-blue);
+}
+
+.sketch-shadow-red {
+  box-shadow: 5px 6px 0px 0px var(--alert-red);
+}
+
+/* Highlighter Marker Effect */
+.highlighter {
+  background: linear-gradient(100deg, rgba(255, 255, 165, 0) 1%, rgba(255, 255, 165, 0.9) 2.5%, rgba(255, 255, 165, 0.8) 98%, rgba(255, 255, 165, 0) 99%);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+.highlighter-green {
+  background: linear-gradient(100deg, rgba(212, 248, 212, 0) 1%, rgba(212, 248, 212, 0.9) 2.5%, rgba(212, 248, 212, 0.8) 98%, rgba(212, 248, 212, 0) 99%);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+.highlighter-red {
+  background: linear-gradient(100deg, rgba(255, 200, 200, 0) 1%, rgba(255, 200, 200, 0.8) 2.5%, rgba(255, 200, 200, 0.7) 98%, rgba(255, 200, 200, 0) 99%);
+  padding: 0 4px;
+  border-radius: 3px;
+}
+
+/* Washi Tape Graphic Element */
+.tape-top {
+  position: relative;
+}
+
+.tape-top::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 90px;
+  height: 24px;
+  background-color: rgba(238, 232, 213, 0.88);
+  border: 1px dashed rgba(180, 170, 150, 0.6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Dog-eared Folded Corner on Cards */
+.paper-fold {
+  position: relative;
+}
+.paper-fold::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 22px 22px 0;
+  border-color: transparent #e2dec9 transparent transparent;
+  filter: drop-shadow(-2px 2px 2px rgba(0,0,0,0.1));
+}
+
+/* Subtle Hand-Drawn Underlines */
+.sketch-underline {
+  background-image: linear-gradient(to right, var(--alert-red) 75%, transparent 0%);
+  background-position: 0 100%;
+  background-repeat: repeat-x;
+  background-size: 8px 3px;
+  padding-bottom: 3px;
+}
+
+.sketch-underline-blue {
+  background-image: linear-gradient(to right, var(--ballpoint-blue) 75%, transparent 0%);
+  background-position: 0 100%;
+  background-repeat: repeat-x;
+  background-size: 8px 3px;
+  padding-bottom: 3px;
+}

@@ -1,0 +1,2523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chapter 01: What is a Backend & How it Works — Complete sketch-note engineering handbook, interactive simulators, and masterclass notes from video transcript.">
+  <title>Chapter 01: What is a Backend & How it Works — Sketch Notes</title>
+
+    <!-- Google Fonts: Lexend (rules.md) & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================================
+       SKETCH-NOTE DESIGN SYSTEM (MATCHING LANDING PAGE AESTHETICS)
+       ========================================================================= */
+    :root {
+      --paper-note: #F4F1EA;
+      --paper-card: #FFFFFF;
+      --ink-blue: #0E2A5C;
+      --ink-subtle: #1e3a6d;
+      --pencil-grey: #333333;
+      --pencil-light: #555555;
+      --alert-red: #D12828;
+      --alert-red-subtle: rgba(209, 40, 40, 0.12);
+      --highlighter-yellow: #FFFFA5;
+      --highlighter-green: #d4f8d4;
+      --ballpoint-blue: #0000FF;
+      --border-dark: #0E2A5C;
+      --border-subtle: #cbd5e1;
+
+      --font-hand: 'Lexend', sans-serif;
+      --font-sans: 'Lexend', sans-serif;
+      --font-caveat: 'Lexend', sans-serif;
+      --font-architect: 'Lexend', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --header-height: 68px;
+      --footer-height: 64px;
+      --container-max: 1180px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--paper-note);
+      color: var(--pencil-grey);
+      font-family: 'Lexend', sans-serif;
+      font-optical-sizing: auto;
+      /* Notebook ruling lines background matching landing page */
+      background-image: linear-gradient(rgba(180, 195, 220, 0.25) 1px, transparent 1px);
+      background-size: 100% 1.6em;
+      line-height: 1.6;
+      font-size: 1.15rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    /* Sketch Borders & Shadows */
+    .sketch-border {
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+    }
+    .sketch-border-thick {
+      border: 3px solid var(--ink-blue);
+      border-radius: 240px 20px 210px 18px/18px 210px 18px 240px;
+    }
+    .sketch-border-red {
+      border: 2px solid var(--alert-red);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+    }
+    .sketch-shadow {
+      box-shadow: 4px 5px 0px 0px var(--ink-blue);
+    }
+    .sketch-shadow-sm {
+      box-shadow: 2px 3px 0px 0px var(--ink-blue);
+    }
+    .sketch-shadow-lg {
+      box-shadow: 7px 8px 0px 0px var(--ink-blue);
+    }
+    .sketch-shadow-red {
+      box-shadow: 4px 5px 0px 0px var(--alert-red);
+    }
+
+    /* Highlighter Marker Effect */
+    .highlighter {
+      background: linear-gradient(100deg, rgba(255, 255, 165, 0) 1%, rgba(255, 255, 165, 0.9) 2.5%, rgba(255, 255, 165, 0.8) 98%, rgba(255, 255, 165, 0) 99%);
+      padding: 0 4px;
+      border-radius: 3px;
+    }
+    .highlighter-red {
+      background: linear-gradient(100deg, rgba(209, 40, 40, 0) 1%, rgba(209, 40, 40, 0.15) 2.5%, rgba(209, 40, 40, 0.2) 98%, rgba(209, 40, 40, 0) 99%);
+      padding: 0 4px;
+      border-radius: 3px;
+    }
+    .highlighter-green {
+      background: linear-gradient(100deg, rgba(212, 248, 212, 0) 1%, rgba(212, 248, 212, 0.9) 2.5%, rgba(212, 248, 212, 0.8) 98%, rgba(212, 248, 212, 0) 99%);
+      padding: 0 4px;
+      border-radius: 3px;
+    }
+
+    /* Masking Tape Sticking Cards */
+    .tape-top {
+      position: relative;
+    }
+    .tape-top::before {
+      content: "";
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-2deg);
+      width: 90px;
+      height: 24px;
+      background-color: rgba(238, 232, 213, 0.88);
+      border: 1px dashed rgba(180, 170, 150, 0.6);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      z-index: 10;
+    }
+
+    /* Code Blocks */
+    .sketch-code {
+      background: #030712;
+      color: #e2e8f0;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      border: 2px solid var(--ink-blue);
+      box-shadow: 3px 4px 0px 0px var(--ink-blue);
+      margin: 1rem 0;
+      line-height: 1.5;
+    }
+
+    /* Containers */
+    .container {
+      width: 100%;
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+
+    /* =========================================================================
+       GLOBAL APP HEADER & VIEW TABS
+       ========================================================================= */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(244, 241, 234, 0.94);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 2px solid var(--ink-blue);
+      box-shadow: 0 2px 6px rgba(14, 42, 92, 0.08);
+      height: var(--header-height);
+    }
+
+    .header-inner {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-portal-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.65rem;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+      transition: all 0.15s ease;
+    }
+    .nav-portal-btn:hover {
+      background: var(--highlighter-yellow);
+      transform: translateY(-1px);
+    }
+
+    .chapter-badge-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--highlighter-yellow);
+      padding: 0.3rem 0.75rem;
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      transform: rotate(-1deg);
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+    }
+
+    .chapter-num {
+      font-family: var(--font-caveat);
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--alert-red);
+    }
+
+    .chapter-text {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--ink-blue);
+    }
+
+    /* View Switcher */
+    .view-tabs {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(14, 42, 92, 0.06);
+      padding: 0.25rem;
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+    }
+
+    .view-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.65rem;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      border-radius: 12px;
+      transition: all 0.15s ease;
+    }
+
+    .view-tab-btn:hover {
+      background: rgba(255, 255, 165, 0.6);
+    }
+
+    .view-tab-btn.active {
+      background: var(--ink-blue);
+      color: #ffffff;
+      box-shadow: 2px 2px 0px 0px #333;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .header-icon-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      color: var(--ink-blue);
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+      transition: all 0.15s ease;
+    }
+    .header-icon-btn:hover {
+      background: var(--highlighter-yellow);
+      transform: translateY(-1px);
+    }
+
+    /* =========================================================================
+       VIEW MODES: PRESENTATION, READER, REVISION, FLASHCARDS, QUIZ
+       ========================================================================= */
+    .learning-view {
+      display: none;
+      width: 100%;
+    }
+
+    .learning-view.active {
+      display: block;
+    }
+
+    /* -------------------------------------------------------------------------
+       1. PRESENTATION (SLIDES) VIEW
+       ------------------------------------------------------------------------- */
+    .presentation-container {
+      padding: 2rem 0 6.5rem;
+      position: relative;
+    }
+
+    .slide-wrapper {
+      display: none;
+      animation: slideIn 0.25s ease-out;
+    }
+
+    .slide-wrapper.active {
+      display: block;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide-card {
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      border-radius: 240px 20px 210px 18px/18px 210px 18px 240px;
+      padding: 2.25rem;
+      box-shadow: 8px 10px 0px 0px var(--ink-blue);
+      position: relative;
+      margin-top: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .slide-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px dashed var(--ink-blue);
+      padding-bottom: 0.85rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .slide-step-badge {
+      font-family: var(--font-caveat);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--alert-red);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .slide-topic-tag {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      background: var(--highlighter-yellow);
+      border: 1px solid var(--ink-blue);
+      border-radius: 4px;
+      color: var(--ink-blue);
+    }
+
+    .slide-title {
+      font-family: var(--font-caveat);
+      font-size: 2.75rem;
+      line-height: 1.15;
+      font-weight: 700;
+      color: var(--ink-blue);
+      margin-bottom: 1.25rem;
+    }
+
+    .slide-lead {
+      font-size: 1.35rem;
+      color: var(--pencil-grey);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Slide Sticky Notes */
+    .sticky-note {
+      background: var(--highlighter-yellow);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      padding: 1.25rem;
+      box-shadow: 5px 6px 0px 0px var(--ink-blue);
+      position: relative;
+      margin: 1.25rem 0;
+      transform: rotate(-0.5deg);
+    }
+
+    .sticky-note-red {
+      background: #ffe5e5;
+      border: 2px solid var(--alert-red);
+      box-shadow: 5px 6px 0px 0px var(--alert-red);
+      transform: rotate(0.8deg);
+    }
+
+    .sticky-note-blue {
+      background: #e6f0ff;
+      border: 2px solid var(--ballpoint-blue);
+      box-shadow: 5px 6px 0px 0px var(--ballpoint-blue);
+      transform: rotate(-0.8deg);
+    }
+
+    .sticky-title {
+      font-family: var(--font-architect);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* Floating Left & Right Side Navigation Arrows */
+    .floating-slide-nav {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 92;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      box-shadow: 4px 6px 0px 0px var(--ink-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-blue);
+      cursor: pointer;
+      font-size: 1.7rem;
+      font-weight: 800;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      user-select: none;
+    }
+    .floating-slide-nav.prev {
+      left: 18px;
+    }
+    .floating-slide-nav.next {
+      right: 18px;
+      background: var(--alert-red);
+      color: #FFFFFF;
+    }
+    .floating-slide-nav:hover:not(:disabled) {
+      transform: translateY(-50%) scale(1.14);
+      box-shadow: 6px 9px 0px 0px var(--ink-blue);
+    }
+    .floating-slide-nav.prev:hover:not(:disabled) {
+      background: var(--highlighter-yellow);
+    }
+    .floating-slide-nav.next:hover:not(:disabled) {
+      background: #b91c1c;
+      color: #FFFFFF;
+    }
+    .floating-slide-nav:disabled {
+      opacity: 0.22;
+      cursor: not-allowed;
+      box-shadow: none;
+      pointer-events: none;
+    }
+    @media (max-width: 1260px) {
+      .floating-slide-nav {
+        display: none !important;
+      }
+    }
+
+
+
+    /* Presentation Bottom Dock Controls */
+    .presentation-controls-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 68px;
+      background: rgba(244, 241, 234, 0.98);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-top: 3px solid var(--ink-blue);
+      z-index: 95;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 -4px 14px rgba(14, 42, 92, 0.12);
+    }
+
+    .controls-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 0.75rem;
+    }
+
+    .controls-center-group {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .btn-slide-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 1.25rem;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      box-shadow: 3px 4px 0px 0px var(--ink-blue);
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .btn-slide-nav:hover:not(:disabled) {
+      background: var(--highlighter-yellow);
+      transform: translateY(-2px);
+      box-shadow: 4px 6px 0px 0px var(--ink-blue);
+    }
+    .btn-slide-next-highlight {
+      background: var(--alert-red) !important;
+      color: #FFFFFF !important;
+      box-shadow: 4px 5px 0px 0px var(--ink-blue) !important;
+      font-size: 1.15rem !important;
+      padding: 0.5rem 1.6rem !important;
+    }
+    .btn-slide-next-highlight:hover:not(:disabled) {
+      background: #b91c1c !important;
+      color: #FFFFFF !important;
+      transform: translateY(-2px) scale(1.02) !important;
+      box-shadow: 5px 7px 0px 0px var(--ink-blue) !important;
+    }
+    .btn-slide-nav:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .slide-progress-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .slide-counter-badge {
+      font-family: var(--font-caveat);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+    }
+
+    .slide-progress-track {
+      width: 160px;
+      height: 8px;
+      background: #e2e8f0;
+      border: 1px solid var(--ink-blue);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .slide-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #D12828, #0E2A5C);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    /* -------------------------------------------------------------------------
+       2. DIGITAL TEXTBOOK (READER) VIEW
+       ------------------------------------------------------------------------- */
+    .reader-article {
+      max-width: 860px;
+      margin: 2.5rem auto 5rem;
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      border-radius: 240px 20px 210px 18px/18px 210px 18px 240px;
+      padding: 3rem;
+      box-shadow: 8px 10px 0px 0px var(--ink-blue);
+    }
+
+    .reader-header {
+      border-bottom: 2px dashed var(--ink-blue);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2.5rem;
+      text-align: center;
+    }
+
+    .reader-main-title {
+      font-family: var(--font-caveat);
+      font-size: 3.25rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      line-height: 1.15;
+      margin-bottom: 0.5rem;
+    }
+
+    .reader-section {
+      margin-bottom: 3rem;
+    }
+
+    .reader-section-title {
+      font-family: var(--font-architect);
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      border-bottom: 2px solid var(--alert-red);
+      padding-bottom: 0.35rem;
+      margin-bottom: 1.25rem;
+      display: inline-block;
+    }
+
+    .reader-p {
+      margin-bottom: 1.25rem;
+      font-size: 1.2rem;
+      line-height: 1.7;
+    }
+
+    /* -------------------------------------------------------------------------
+       3. REVISION CHEAT SHEETS VIEW
+       ------------------------------------------------------------------------- */
+    .revision-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.75rem;
+      margin: 2.5rem 0 5rem;
+    }
+
+    .revision-card {
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      padding: 1.75rem;
+      box-shadow: 6px 7px 0px 0px var(--ink-blue);
+    }
+
+    .revision-card-title {
+      font-family: var(--font-caveat);
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      margin-bottom: 1rem;
+      border-bottom: 2px dashed var(--alert-red);
+      padding-bottom: 0.3rem;
+    }
+
+    /* -------------------------------------------------------------------------
+       4. FLASHCARDS DECK VIEW
+       ------------------------------------------------------------------------- */
+    .flashcards-container {
+      max-width: 680px;
+      margin: 3rem auto 5rem;
+      text-align: center;
+    }
+
+    .flashcard-scene {
+      perspective: 1000px;
+      margin: 2rem 0;
+      cursor: pointer;
+    }
+
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      height: 340px;
+      transform-style: preserve-3d;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .flashcard-inner.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .flashcard-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      border-radius: 240px 20px 210px 18px/18px 210px 18px 240px;
+      box-shadow: 7px 8px 0px 0px var(--ink-blue);
+      padding: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .flashcard-back {
+      transform: rotateY(180deg);
+      background: var(--highlighter-yellow);
+    }
+
+    .flashcard-prompt-hint {
+      font-size: 0.85rem;
+      color: var(--alert-red);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    .flashcard-text {
+      font-family: var(--font-caveat);
+      font-size: 2.1rem;
+      line-height: 1.3;
+      font-weight: 700;
+      color: var(--ink-blue);
+    }
+
+    /* -------------------------------------------------------------------------
+       5. SELF-ASSESSMENT QUIZ VIEW
+       ------------------------------------------------------------------------- */
+    .quiz-container {
+      max-width: 820px;
+      margin: 2.5rem auto 5rem;
+    }
+
+    .quiz-question-card {
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      padding: 2rem;
+      box-shadow: 6px 7px 0px 0px var(--ink-blue);
+      margin-bottom: 2rem;
+    }
+
+    .quiz-q-num {
+      font-family: var(--font-caveat);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--alert-red);
+      margin-bottom: 0.4rem;
+    }
+
+    .quiz-q-text {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      margin-bottom: 1.25rem;
+      line-height: 1.4;
+    }
+
+    .quiz-options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .quiz-option-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.85rem 1.25rem;
+      background: var(--paper-note);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      text-align: left;
+      font-size: 1.15rem;
+      color: var(--pencil-grey);
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .quiz-option-btn:hover:not(.answered) {
+      background: var(--highlighter-yellow);
+      transform: translateX(4px);
+    }
+
+    .quiz-option-btn.correct {
+      background: #d4f8d4 !important;
+      border-color: #059669 !important;
+      color: #065f46 !important;
+      font-weight: 700;
+    }
+
+    .quiz-option-btn.incorrect {
+      background: #fee2e2 !important;
+      border-color: #dc2626 !important;
+      color: #991b1b !important;
+    }
+
+    .quiz-explanation-box {
+      margin-top: 1.25rem;
+      padding: 1.25rem;
+      background: var(--highlighter-yellow);
+      border: 2px solid var(--ink-blue);
+      border-radius: 12px;
+      font-size: 1.1rem;
+      display: none;
+    }
+
+    /* =========================================================================
+       INTERACTIVE WIDGETS & SIMULATORS (7 CUSTOM LABS)
+       ========================================================================= */
+    .widget-box {
+      background: var(--paper-note);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      box-shadow: 4px 5px 0px 0px var(--ink-blue);
+    }
+
+    .widget-title {
+      font-family: var(--font-architect);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Packet Tracer Pipeline */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.5rem;
+      margin: 1.25rem 0;
+    }
+
+    .pipeline-node {
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 10px;
+      padding: 0.75rem 0.5rem;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .pipeline-node.active-hop {
+      background: var(--highlighter-yellow);
+      border-color: var(--alert-red);
+      transform: translateY(-4px);
+      box-shadow: 0 6px 12px rgba(209, 40, 40, 0.25);
+    }
+
+    .pipeline-node-num {
+      font-family: var(--font-caveat);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--alert-red);
+    }
+
+    .pipeline-node-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      line-height: 1.2;
+      margin-top: 0.2rem;
+    }
+
+    /* Port Toggle Matrix */
+    .port-toggle-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    .port-btn {
+      padding: 0.75rem;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .port-btn.allowed {
+      background: #d4f8d4;
+      border-color: #059669;
+      color: #065f46;
+      font-weight: 700;
+    }
+
+    .port-btn.blocked {
+      background: #fee2e2;
+      border-color: #dc2626;
+      color: #991b1b;
+    }
+
+    /* Universal Modal & Drawers */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(14, 42, 92, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .drawer-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      max-width: 90vw;
+      height: 100vh;
+      background: var(--paper-card);
+      border-left: 3px solid var(--ink-blue);
+      box-shadow: -6px 0 20px rgba(0,0,0,0.15);
+      z-index: 250;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+    }
+    .drawer-panel.open { right: 0; }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px dashed var(--ink-blue);
+      padding-bottom: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .pipeline-grid { grid-template-columns: repeat(3, 1fr); }
+      .revision-grid { grid-template-columns: 1fr; }
+      .port-toggle-grid { grid-template-columns: repeat(2, 1fr); }
+      .view-tab-btn span { display: none; }
+    }
+  </style>
+  <!-- FastAPI Static Design System -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/sketch-theme.css') }}">
+</head>
+<body>
+
+  <!-- =========================================================================
+       GLOBAL APP HEADER
+       ========================================================================= -->
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="header-left">
+        <a href="/" class="nav-portal-btn" title="Back to Curriculum Landing Page">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span>Curriculum Hub</span>
+        </a>
+        <a href="/rest_api" class="nav-portal-btn" style="background:#D12828; color:#ffffff; border-color:#D12828;" title="Go to REST API Masterclass">
+          <span>REST API →</span>
+        </a>
+
+        <div class="chapter-badge-title">
+          <span class="chapter-text">What is a Backend & How it Works</span>
+        </div>
+      </div>
+
+      <!-- View Switcher -->
+      <nav class="view-tabs" aria-label="Learning View Selection">
+        <button class="view-tab-btn active" data-view="presentation" onclick="switchView('presentation')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Slides</span>
+        </button>
+        <button class="view-tab-btn" data-view="reader" onclick="switchView('reader')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>Digital Textbook</span>
+        </button>
+        <button class="view-tab-btn" data-view="revision" onclick="switchView('revision')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Revision</span>
+        </button>
+        <button class="view-tab-btn" data-view="flashcards" onclick="switchView('flashcards')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          <span>Flashcards</span>
+        </button>
+        <button class="view-tab-btn" data-view="quiz" onclick="switchView('quiz')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Quiz</span>
+        </button>
+      </nav>
+
+      <div class="header-right">
+        <button class="header-icon-btn" onclick="openSearchModal()" title="Search Notes (Shortcut: /)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="header-icon-btn" onclick="toggleDrawer('tocDrawer')" title="Table of Contents">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+        </button>
+        <button class="header-icon-btn" onclick="toggleDrawer('notesDrawer')" title="Personal Notepad">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Floating Left & Right Screen Navigation Arrows -->
+  <button class="floating-slide-nav prev" id="floatPrevSlide" onclick="navigateSlideStep(-1)" title="Previous Slide (← or Back)" disabled>
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <button class="floating-slide-nav next" id="floatNextSlide" onclick="navigateSlideStep(1)" title="Next Slide (→ or Space)">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
+
+  <main class="container">
+    
+    <!-- =========================================================================
+         VIEW 1: PRESENTATION (SLIDES)
+         ========================================================================= -->
+    <div id="viewPresentation" class="learning-view active presentation-container">
+
+      <!-- SLIDE 1: INTRO & PHYSICAL DEFINITION -->
+      <article class="slide-wrapper active" data-slide-index="0">
+        <div class="slide-card tape-top">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 01 of 14</span>
+            <span class="slide-topic-tag">Foundations & Physical Reality</span>
+          </div>
+
+          <h2 class="slide-title">What is a Backend? Beyond the Abstract Definition</h2>
+          <p class="slide-lead">
+            In its traditional definition, a <span class="highlighter">backend is simply a computer</span> listening for HTTP, WebSocket, gRPC, or other network requests through open ports (like Port 80 or 443) accessible over the Internet.
+          </p>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin:1.5rem 0;">
+            <div class="sticky-note">
+              <div class="sticky-title">Why do we call it a "Server"?</div>
+              <p>Because it literally <strong>provides or serves content</strong> to remote clients! It serves static assets (HTML, CSS, JavaScript, images) or serialized structured data (JSON payloads), and accepts data mutations sent by clients.</p>
+            </div>
+            <div class="sticky-note sticky-note-blue">
+              <div class="sticky-title">The Instructor's Philosophy</div>
+              <p>"Abstract definitions are fine, but to truly become a senior backend engineer, you need a <strong>holistic, physical understanding</strong> of the exact network components working behind the scenes."</p>
+            </div>
+          </div>
+
+          <div class="widget-box">
+            <div class="widget-title">⚡ Interactive Quick Check: Port Reference</div>
+            <p style="font-size:1.05rem; margin-bottom:0.75rem;">Default well-known networking ports every backend engineer must know:</p>
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:1rem; font-family:var(--font-mono); font-size:0.95rem;">
+              <div style="background:#fff; padding:0.6rem; border:2px solid var(--ink-blue); border-radius:8px; text-align:center;">
+                <strong style="color:var(--alert-red);">Port 80</strong><br><span style="font-size:0.8rem; color:#555;">HTTP Insecure</span>
+              </div>
+              <div style="background:#fff; padding:0.6rem; border:2px solid var(--ink-blue); border-radius:8px; text-align:center;">
+                <strong style="color:#059669;">Port 443</strong><br><span style="font-size:0.8rem; color:#555;">HTTPS / TLS</span>
+              </div>
+              <div style="background:#fff; padding:0.6rem; border:2px solid var(--ink-blue); border-radius:8px; text-align:center;">
+                <strong style="color:var(--ink-blue);">Port 22</strong><br><span style="font-size:0.8rem; color:#555;">SSH Terminal</span>
+              </div>
+              <div style="background:#fff; padding:0.6rem; border:2px solid var(--ink-blue); border-radius:8px; text-align:center;">
+                <strong style="color:var(--ballpoint-blue);">Port 3000/3001</strong><br><span style="font-size:0.8rem; color:#555;">Internal App</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 2: THE LIVE AWS DEMO SETUP -->
+      <article class="slide-wrapper" data-slide-index="1">
+        <div class="slide-card">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 02 of 14</span>
+            <span class="slide-topic-tag">Live Architecture Walkthrough</span>
+          </div>
+
+          <h2 class="slide-title">The Real-World AWS Deployment Setup</h2>
+          <p class="slide-lead">
+            To demonstrate request travel end-to-end, the instructor deploys a live backend onto an <span class="highlighter">AWS EC2 Linux instance</span> under the domain <code style="font-family:var(--font-mono); color:var(--ink-blue);">senus.xyz</code>.
+          </p>
+
+          <div style="background:#fff; border:2px solid var(--ink-blue); border-radius:12px; padding:1.5rem; margin:1.5rem 0;">
+            <div style="font-family:var(--font-architect); font-size:1.3rem; color:var(--ink-blue); margin-bottom:0.75rem;">
+              The Network Inspection Workflow:
+            </div>
+            <ol style="margin-left:1.5rem; line-height:1.8; font-size:1.15rem;">
+              <li>Open browser and visit: <code style="font-family:var(--font-mono); color:var(--alert-red);">https://backend-demo.senus.xyz/users</code>.</li>
+              <li>Press <kbd style="background:#eee; padding:2px 6px; border:1px solid #ccc; border-radius:4px; font-family:var(--font-mono);">F12</kbd> to open the Browser Developer Tools Network Toolbar.</li>
+              <li>Check <strong>"Disable Cache"</strong> so every refresh generates authentic HTTP round-trips with genuine status codes.</li>
+              <li>Observe the clean JSON array of sample users returning with HTTP status <strong style="color:#059669;">200 OK</strong>.</li>
+            </ol>
+          </div>
+
+          <div class="sticky-note sticky-note-red">
+            <div class="sticky-title">The Big Question:</div>
+            <p style="font-size:1.25rem;">"Between you pressing Enter in the browser address bar and the JSON response appearing on your screen, what exact hops did the packet take across the globe?"</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 3: OVERVIEW OF THE 6 HOPS -->
+      <article class="slide-wrapper" data-slide-index="2">
+        <div class="slide-card tape-top">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 03 of 14</span>
+            <span class="slide-topic-tag">Request Topology</span>
+          </div>
+
+          <h2 class="slide-title">The 6-Hop Journey Over the Internet</h2>
+          <p class="slide-lead">
+            A request is not magic. It is an electrical or optical packet traveling through 6 distinct infrastructural stages:
+          </p>
+
+          <!-- Interactive 6-Hop Request Simulator -->
+          <div class="widget-box" id="hopSimulatorBox">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+              <div class="widget-title">⚡ Interactive Simulator: Packet Flow Simulator</div>
+              <button onclick="runPacketTracerSim()" class="btn-slide-nav" style="background:var(--alert-red); color:#fff; font-size:0.95rem;">
+                ▶ Transmit Request Packet
+              </button>
+            </div>
+
+            <div class="pipeline-grid">
+              <div class="pipeline-node active-hop" id="pipeNode1">
+                <div class="pipeline-node-num">HOP 1</div>
+                <div class="pipeline-node-name">Client Browser (TCP Socket)</div>
+              </div>
+              <div class="pipeline-node" id="pipeNode2">
+                <div class="pipeline-node-num">HOP 2</div>
+                <div class="pipeline-node-name">DNS Server (A Record)</div>
+              </div>
+              <div class="pipeline-node" id="pipeNode3">
+                <div class="pipeline-node-num">HOP 3</div>
+                <div class="pipeline-node-name">AWS Firewall (Security Group)</div>
+              </div>
+              <div class="pipeline-node" id="pipeNode4">
+                <div class="pipeline-node-num">HOP 4</div>
+                <div class="pipeline-node-name">Nginx Proxy (Port 443 SSL)</div>
+              </div>
+              <div class="pipeline-node" id="pipeNode5">
+                <div class="pipeline-node-num">HOP 5</div>
+                <div class="pipeline-node-name">PM2 Node.js (Port 3001)</div>
+              </div>
+              <div class="pipeline-node" id="pipeNode6">
+                <div class="pipeline-node-num">HOP 6</div>
+                <div class="pipeline-node-name">Database (Connection Pool)</div>
+              </div>
+            </div>
+
+            <div id="simLogTerminal" class="sketch-code" style="margin-top:1rem; min-height:80px;">
+              [SYSTEM] Ready to trace packet flow. Click 'Transmit Request Packet' above to step through physical hops.
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 4: HOP 1 & 2 - DNS RESOLUTION -->
+      <article class="slide-wrapper" data-slide-index="3">
+        <div class="slide-card">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 04 of 14</span>
+            <span class="slide-topic-tag">Hops 1 & 2: Networking & DNS</span>
+          </div>
+
+          <h2 class="slide-title">Hop 1 & 2: Browser Sockets & Authoritative DNS</h2>
+          <p class="slide-lead">
+            The browser looks at the domain <code style="font-family:var(--font-mono); color:var(--ink-blue);">backend-demo.senus.xyz</code>. Browsers cannot route packets to domain names; they require an <span class="highlighter">IP (Internet Protocol) address</span>.
+          </p>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin:1.5rem 0;">
+            <div style="background:#fff; border:2px solid var(--ink-blue); padding:1.25rem; border-radius:12px;">
+              <div style="font-family:var(--font-architect); font-weight:700; color:var(--alert-red); font-size:1.25rem;">
+                A-Records (Address Records)
+              </div>
+              <p style="margin-top:0.5rem;">Maps a domain or subdomain directly to an <strong>IPv4 address</strong> of a physical or virtual machine.<br>
+              <code style="font-family:var(--font-mono); font-size:0.85rem; color:#0E2A5C;">backend-demo.senus.xyz → 54.210.xx.xx (AWS EC2)</code></p>
+            </div>
+
+            <div style="background:#fff; border:2px solid var(--ink-blue); padding:1.25rem; border-radius:12px;">
+              <div style="font-family:var(--font-architect); font-weight:700; color:var(--ballpoint-blue); font-size:1.25rem;">
+                CNAME Records (Canonical Name)
+              </div>
+              <p style="margin-top:0.5rem;">Maps an alias domain or subdomain to <strong>another domain name</strong> rather than directly to an IP address.<br>
+              <code style="font-family:var(--font-mono); font-size:0.85rem; color:#0E2A5C;">api.domain.com → alb-prod-123.aws.com</code></p>
+            </div>
+          </div>
+
+          <div class="widget-box">
+            <div class="widget-title">⚡ Interactive DNS Lookup Sandbox</div>
+            <div style="display:flex; gap:0.5rem; margin-bottom:0.75rem;">
+              <input type="text" id="dnsSubdomainInput" value="backend-demo" style="flex:1; padding:0.5rem 0.75rem; border:2px solid var(--ink-blue); border-radius:8px; font-family:var(--font-mono); font-size:0.95rem;">
+              <span style="display:flex; align-items:center; font-family:var(--font-mono); font-weight:700; color:var(--ink-blue);">.senus.xyz</span>
+              <button onclick="simulateDnsLookup()" class="btn-slide-nav" style="padding:0.4rem 1rem; font-size:0.95rem;">Resolve</button>
+            </div>
+            <div id="dnsLookupResult" style="padding:0.75rem; background:#fff; border:1px solid var(--ink-blue); border-radius:8px; font-family:var(--font-mono); font-size:0.88rem;">
+              <strong>Record Type:</strong> A-Record | <strong>Target IPv4:</strong> 54.210.88.14 (AWS EC2 Instance) | <strong>TTL:</strong> 300s
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 5: HOP 3 - AWS FIREWALL -->
+      <article class="slide-wrapper" data-slide-index="4">
+        <div class="slide-card tape-top">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 05 of 14</span>
+            <span class="slide-topic-tag">Hop 3: Cloud Infrastructure Security</span>
+          </div>
+
+          <h2 class="slide-title">Hop 3: AWS Security Group & Perimeter Firewall</h2>
+          <p class="slide-lead">
+            Once the request packet reaches AWS with the target EC2 IP, it hits the <span class="highlighter">AWS Native Firewall (Security Group)</span> before touching the virtual server's operating system!
+          </p>
+
+          <div class="sticky-note sticky-note-red">
+            <div class="sticky-title">The Silent Drop Rule</div>
+            <p>If incoming traffic requests a port that has not been explicitly allowed in the Security Group inbound rules, <strong>AWS drops the packet silently at the edge</strong>. The request will time out in the user's browser, and the server never even knows someone tried to connect!</p>
+          </div>
+
+          <!-- Interactive Security Group Simulator -->
+          <div class="widget-box">
+            <div class="widget-title">⚡ Security Group Port Permitter (Click to Toggle)</div>
+            <div class="port-toggle-grid">
+              <div class="port-btn allowed" id="sgPort80" onclick="toggleSgPort('80')">
+                <strong>Port 80</strong><br>HTTP Traffic<br><span style="font-size:0.75rem;">ALLOWED</span>
+              </div>
+              <div class="port-btn allowed" id="sgPort443" onclick="toggleSgPort('443')">
+                <strong>Port 443</strong><br>HTTPS / TLS<br><span style="font-size:0.75rem;">ALLOWED</span>
+              </div>
+              <div class="port-btn allowed" id="sgPort22" onclick="toggleSgPort('22')">
+                <strong>Port 22</strong><br>SSH Terminal<br><span style="font-size:0.75rem;">ALLOWED</span>
+              </div>
+              <div class="port-btn blocked" id="sgPort3000" onclick="toggleSgPort('3000')">
+                <strong>Port 3000</strong><br>Next.js Frontend<br><span style="font-size:0.75rem;">BLOCKED (Internal)</span>
+              </div>
+              <div class="port-btn blocked" id="sgPort3001" onclick="toggleSgPort('3001')">
+                <strong>Port 3001</strong><br>Node.js Backend<br><span style="font-size:0.75rem;">BLOCKED (Internal)</span>
+              </div>
+            </div>
+            <p style="font-size:0.95rem; color:#555;">
+              <strong>Architecture Insight:</strong> Ports 3000 and 3001 are intentionally kept closed from the internet! Only Port 80 and 443 are open, routing through Nginx for reverse proxy protection.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 6: HOP 4 - NGINX REVERSE PROXY -->
+      <article class="slide-wrapper" data-slide-index="5">
+        <div class="slide-card">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 06 of 14</span>
+            <span class="slide-topic-tag">Hop 4: Web Servers & Reverse Proxies</span>
+          </div>
+
+          <h2 class="slide-title">Hop 4: Nginx Reverse Proxy & SSL Offloading</h2>
+          <p class="slide-lead">
+            Inside the EC2 instance, requests are received by <span class="highlighter">Nginx</span>. What is a reverse proxy? It is a specialized server that sits in front of other application servers to handle SSL, redirects, and routing from a centralized location.
+          </p>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin:1.5rem 0;">
+            <div class="sticky-note">
+              <div class="sticky-title">1. Automated SSL via Certbot</div>
+              <p>Certbot automatically provisions Let's Encrypt certificates. Nginx listens on Port 80 (HTTP) and seamlessly redirects clients to Port 443 (HTTPS).</p>
+            </div>
+            <div class="sticky-note sticky-note-blue">
+              <div class="sticky-title">2. Server Name Routing</div>
+              <p>Based on the incoming HTTP host header (<code style="font-family:var(--font-mono);">server_name</code>), Nginx decides which internal local port to forward traffic to!</p>
+            </div>
+          </div>
+
+          <div class="sketch-code">
+<span style="color:#6b7280;"># /etc/nginx/sites-available/default</span>
+server {
+    server_name <span style="color:#86efac;">backend-demo.senus.xyz</span>;
+    listen 443 ssl; <span style="color:#6b7280;"># Managed by Certbot</span>
+
+    location / {
+        <span style="color:#93c5fd;">proxy_pass</span> http://localhost:3001; <span style="color:#fde047;"># Internal Node Server</span>
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 7: HOP 5 & 6 - PM2 & NODE APP -->
+      <article class="slide-wrapper" data-slide-index="6">
+        <div class="slide-card tape-top">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 07 of 14</span>
+            <span class="slide-topic-tag">Hops 5 & 6: Application Layer & Database</span>
+          </div>
+
+          <h2 class="slide-title">Hop 5 & 6: PM2 Process Management & Node.js</h2>
+          <p class="slide-lead">
+            Nginx passes the request over loopback <code style="font-family:var(--font-mono); color:var(--ink-blue);">http://localhost:3001/users</code> to the Node.js application process, managed by <span class="highlighter">PM2</span>.
+          </p>
+
+          <div style="background:#fff; border:2px solid var(--ink-blue); padding:1.25rem; border-radius:12px; margin:1.5rem 0;">
+            <div style="font-family:var(--font-architect); font-size:1.25rem; color:var(--ink-blue); margin-bottom:0.5rem;">
+              The PM2 Process Table (<code style="font-family:var(--font-mono);">pm2 list</code>):
+            </div>
+            <div class="sketch-code" style="margin:0;">
+┌─────┬──────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┐
+│ id  │ name         │ namespace   │ version │ mode    │ pid      │ uptime │ status│
+├─────┼──────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┤
+│ 0   │ frontend     │ default     │ 1.0.0   │ fork    │ 24190    │ 14D    │ online│ (Port 3000)
+│ 1   │ backend      │ default     │ 1.0.0   │ fork    │ 24205    │ 14D    │ online│ (Port 3001)
+└─────┴──────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┘
+            </div>
+          </div>
+
+          <div class="sticky-note">
+            <div class="sticky-title">Internal Curl Verification:</div>
+            <p>From inside the EC2 terminal, executing <code style="font-family:var(--font-mono); color:var(--alert-red);">curl http://localhost:3001/users</code> yields the exact identical JSON data as visiting the public URL over the internet. Nginx simply acts as the bridge!</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 8: WHY DO WE NEED BACKENDS? -->
+      <article class="slide-wrapper" data-slide-index="7">
+        <div class="slide-card">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 08 of 14</span>
+            <span class="slide-topic-tag">Core Principles</span>
+          </div>
+
+          <h2 class="slide-title">Why Do We Need Backends? The Single Word: DATA</h2>
+          <p class="slide-lead">
+            If you strip away all frameworks, libraries, protocols, and jargon, the entire existence of backends condenses down to a single word: <span class="highlighter-red" style="font-size:1.6rem; font-weight:700;">DATA</span>.
+          </p>
+
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1.25rem; margin:2rem 0;">
+            <div style="background:#fff; border:2px solid var(--ink-blue); padding:1.5rem; border-radius:12px; text-align:center;">
+              <div style="font-size:2rem; margin-bottom:0.4rem;">📥</div>
+              <div style="font-family:var(--font-architect); font-size:1.35rem; color:var(--ink-blue); font-weight:700;">RECEIVE DATA</div>
+              <p style="font-size:1.05rem; margin-top:0.4rem;">Accepting client inputs, mutations, uploads, and commands securely.</p>
+            </div>
+
+            <div style="background:#fff; border:2px solid var(--ink-blue); padding:1.5rem; border-radius:12px; text-align:center;">
+              <div style="font-size:2rem; margin-bottom:0.4rem;">💾</div>
+              <div style="font-family:var(--font-architect); font-size:1.35rem; color:var(--alert-red); font-weight:700;">PERSIST DATA</div>
+              <p style="font-size:1.05rem; margin-top:0.4rem;">Saving state into relational tables, document stores, or caches permanently.</p>
+            </div>
+
+            <div style="background:#fff; border:2px solid var(--ink-blue); padding:1.5rem; border-radius:12px; text-align:center;">
+              <div style="font-size:2rem; margin-bottom:0.4rem;">📤</div>
+              <div style="font-family:var(--font-architect); font-size:1.35rem; color:var(--ballpoint-blue); font-weight:700;">FETCH & SERVE</div>
+              <p style="font-size:1.05rem; margin-top:0.4rem;">Querying, filtering, sorting, and delivering personalized payloads back to clients.</p>
+            </div>
+          </div>
+
+          <div class="sticky-note">
+            <div class="sticky-title">Centralized Truth</div>
+            <p>Your client application only knows about you. It has your preferences and cached profile. But to interact with anyone else, there must exist a <strong>centralized computer with the complete holistic state of all users</strong>.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 9: THE INSTAGRAM LIKE FLOW -->
+      <article class="slide-wrapper" data-slide-index="8">
+        <div class="slide-card tape-top">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 09 of 14</span>
+            <span class="slide-topic-tag">Case Study</span>
+          </div>
+
+          <h2 class="slide-title">The Instagram Like Example: State Coordination</h2>
+          <p class="slide-lead">
+            Imagine scrolling Instagram: you see your friend's post, you click the <span class="highlighter">Like Button</span>, and immediately your friend receives a push notification on their phone.
+          </p>
+
+          <!-- Interactive Instagram Flow Simulator -->
+          <div class="widget-box">
+            <div class="widget-title">⚡ Interactive Flow: What happened in those 50 milliseconds?</div>
+            <div style="display:flex; justify-content:center; gap:1rem; margin-bottom:1.25rem;">
+              <button onclick="triggerInstaLikeSim()" class="btn-slide-nav" style="background:#D12828; color:#fff;">
+                ❤️ User A Clicks Like Button
+              </button>
+            </div>
+
+            <div id="instaStepDisplay" style="background:#fff; border:2px solid var(--ink-blue); border-radius:12px; padding:1.25rem; min-height:130px; font-size:1.15rem;">
+              Click the button above to trace the server-side state coordination!
+            </div>
+          </div>
+
+          <div class="sticky-note sticky-note-blue">
+            <div class="sticky-title">Why Clients Cannot Do This Directly:</div>
+            <p>User A's phone does not have User B's network address, cannot authenticate User B, and has zero permissions to alter User B's hardware. Only a centralized backend server with global state authority can mediate transactions between independent clients!</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 10: HOW FRONTENDS ACTUALLY WORK -->
+      <article class="slide-wrapper" data-slide-index="9">
+        <div class="slide-card">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 10 of 14</span>
+            <span class="slide-topic-tag">Frontend vs Backend Runtime</span>
+          </div>
+
+          <h2 class="slide-title">How Frontends Work: The Browser is the Runtime</h2>
+          <p class="slide-lead">
+            The instructor demonstrates a Next.js application deployed on the same EC2 instance under <code style="font-family:var(--font-mono); color:var(--ink-blue);">frontend-demo.senus.xyz</code> to illuminate the fundamental difference between frontends and backends.
+          </p>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin:1.5rem 0;">
+            <div style="background:#fff; border:2px solid var(--ink-blue); border-radius:12px; padding:1.5rem;">
+              <div style="font-family:var(--font-architect); font-size:1.35rem; color:var(--alert-red); font-weight:700;">
+                🖥️ The Frontend Model
+              </div>
+              <ul style="margin-top:0.75rem; margin-left:1.25rem; font-size:1.1rem; line-height:1.8;">
+                <li>Server sends down HTML, CSS, and JS files.</li>
+                <li>CSS paints colors, fonts, and layout.</li>
+                <li>JS <strong>hydrates event listeners</strong> in the client engine.</li>
+                <li><span class="highlighter">Execution happens inside the client's browser!</span></li>
+              </ul>
+            </div>
+
+            <div style="background:#fff; border:2px solid var(--ink-blue); border-radius:12px; padding:1.5rem;">
+              <div style="font-family:var(--font-architect); font-size:1.35rem; color:var(--ink-blue); font-weight:700;">
+                ⚙️ The Backend Model
+              </div>
+              <ul style="margin-top:0.75rem; margin-left:1.25rem; font-size:1.1rem; line-height:1.8;">
+                <li>Client sends request data over TCP socket.</li>
+                <li>Server executes logic on powerful server CPU.</li>
+                <li>Server communicates with database and file system.</li>
+                <li><span class="highlighter">Processing happens entirely on remote server hardware!</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sticky-note sticky-note-red">
+            <div class="sticky-title">The Natural Question:</div>
+            <p>"If frontend devices are also computers, why not just connect to the database directly from the browser and avoid backend servers entirely?"</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 11: DEAL-BREAKERS 1 & 2 (SECURITY & CORS) -->
+      <article class="slide-wrapper" data-slide-index="10">
+        <div class="slide-card tape-top">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 11 of 14</span>
+            <span class="slide-topic-tag">Why Not Frontend? Part 1</span>
+          </div>
+
+          <h2 class="slide-title">Deal-Breakers 1 & 2: Sandbox Isolation & CORS</h2>
+          <p class="slide-lead">
+            Four fundamental technical barriers prevent frontend code from ever functioning as a backend. Here are the first two:
+          </p>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin:1.5rem 0;">
+            <div class="sticky-note sticky-note-red">
+              <div class="sticky-title">1. Browser Sandbox Isolation</div>
+              <p>Browsers are strictly isolated sandbox environments. They block JavaScript from touching the local file system or reading OS environment variables. Imagine visiting an unknown website: if browsers weren't sandboxed, that site's JS could read all your private files and bank credentials! Backends require full OS file access for logs, secrets, and caches.</p>
+            </div>
+
+            <div class="sticky-note">
+              <div class="sticky-title">2. CORS Policy Barriers</div>
+              <p>Cross-Origin Resource Sharing restricts frontend JavaScript to only calling APIs within the same origin domain unless external servers explicitly provide permissive <code style="font-family:var(--font-mono); font-size:0.85rem;">Access-Control-Allow-Origin</code> headers. A backend must freely query 10 different internal microservices without browser security interference.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 12: DEAL-BREAKER 3 (DB DRIVERS & CONNECTION POOLS) -->
+      <article class="slide-wrapper" data-slide-index="11">
+        <div class="slide-card">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 12 of 14</span>
+            <span class="slide-topic-tag">Why Not Frontend? Part 2</span>
+          </div>
+
+          <h2 class="slide-title">Deal-Breaker 3: Native DB Drivers & Connection Pools</h2>
+          <p class="slide-lead">
+            Databases like PostgreSQL and MongoDB do not communicate via simple HTTP; they require <span class="highlighter">binary TCP socket drivers</span>.
+          </p>
+
+          <div class="widget-box">
+            <div class="widget-title">⚡ Interactive Simulator: Direct Sockets vs Connection Pooling</div>
+            <p style="margin-bottom:0.75rem;">Adjust the active user concurrency slider to see why databases crash without connection pooling:</p>
+            <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
+              <span style="font-weight:700;">Concurrent Users:</span>
+              <input type="range" id="userConcurrencySlider" min="50" max="50000" step="500" value="500" oninput="updateDbPoolSim(this.value)" style="flex:1;">
+              <span id="userCountDisplay" style="font-family:var(--font-mono); font-weight:700; color:var(--alert-red); width:80px;">500</span>
+            </div>
+            <div id="dbSimStatusResult" style="background:#fff; border:2px solid var(--ink-blue); padding:1rem; border-radius:8px; font-family:var(--font-mono); font-size:0.9rem;">
+              <!-- Dynamically updated -->
+            </div>
+          </div>
+
+          <div class="sticky-note sticky-note-blue">
+            <div class="sticky-title">The Connection Pool Secret:</div>
+            <p>Creating and tearing down database TCP connections takes massive CPU overhead. Backend servers maintain a steady pool of <strong>10 to 50 persistent connections</strong>, reusing them continuously to serve hundreds of thousands of queries effortlessly!</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 13: DEAL-BREAKER 4 (COMPUTE HETEROGENEITY) -->
+      <article class="slide-wrapper" data-slide-index="12">
+        <div class="slide-card tape-top">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 13 of 14</span>
+            <span class="slide-topic-tag">Why Not Frontend? Part 3</span>
+          </div>
+
+          <h2 class="slide-title">Deal-Breaker 4: Client Compute Heterogeneity</h2>
+          <p class="slide-lead">
+            Client devices exist everywhere: from an M3 Max MacBook with 64GB RAM to a <span class="highlighter">budget smartphone with 256MB RAM</span> and a single-core CPU running on 2G network connectivity.
+          </p>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin:1.5rem 0;">
+            <div style="background:#fff; border:2px solid var(--ink-blue); border-radius:12px; padding:1.5rem;">
+              <div style="font-family:var(--font-architect); font-size:1.35rem; color:var(--alert-red); font-weight:700;">
+                📱 The Client Hardware Trap
+              </div>
+              <p style="margin-top:0.5rem; font-size:1.1rem;">If heavy business logic, data crunching, sorting, or cryptography ran in the client, low-end devices would lag, overheat, drop frames, and crash. You cannot upgrade your users' phones.</p>
+            </div>
+
+            <div style="background:#fff; border:2px solid var(--ink-blue); border-radius:12px; padding:1.5rem;">
+              <div style="font-family:var(--font-architect); font-size:1.35rem; color:#059669; font-weight:700;">
+                ☁️ The Elastic Server Superpower
+              </div>
+              <p style="margin-top:0.5rem; font-size:1.1rem;">A centralized backend server can be upgraded in seconds! Need 64 cores and 256GB RAM to crunch data? Spin up a bigger AWS instance or add horizontal replicas behind a load balancer.</p>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- SLIDE 14: SUMMARY & WHAT'S NEXT -->
+      <article class="slide-wrapper" data-slide-index="13">
+        <div class="slide-card">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Slide 14 of 14</span>
+            <span class="slide-topic-tag">Master Summary</span>
+          </div>
+
+          <h2 class="slide-title">Mastery Check & The Road Ahead</h2>
+          <p class="slide-lead">
+            You now possess the foundational physical mental model of backend engineering. You know what happens from the browser socket to the database connection pool!
+          </p>
+
+          <div style="background:var(--highlighter-yellow); border:2px solid var(--ink-blue); border-radius:12px; padding:1.5rem; margin:1.5rem 0;">
+            <div style="font-family:var(--font-caveat); font-size:1.85rem; font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+              Core Takeaways Master Checklist:
+            </div>
+            <ul style="margin-left:1.5rem; font-size:1.15rem; line-height:1.8;">
+              <li>✓ A backend is a physical or virtual computer listening for socket requests on open ports.</li>
+              <li>✓ Requests flow: Browser → DNS A-Record → AWS Security Group → Nginx Reverse Proxy → PM2 Node → Database Pool.</li>
+              <li>✓ Nginx terminates SSL, handles redirects, and protects internal application ports.</li>
+              <li>✓ The entire purpose of backends is centralized DATA (receive, persist, serve).</li>
+              <li>✓ Four deal-breakers keep backend logic off frontends: Sandboxing, CORS, Connection Pools, and Compute Heterogeneity.</li>
+            </ul>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2rem; flex-wrap:wrap; gap:1rem;">
+            <a href="/rest_api" class="btn-slide-nav" style="background:var(--alert-red); color:#fff; font-size:1.15rem;">
+              <span>Continue to Chapter 11: REST API Masterclass →</span>
+            </a>
+            <button onclick="switchView('quiz')" class="btn-slide-nav" style="background:var(--ink-blue); color:#fff;">
+              <span>Take Chapter 01 Quiz (8 Qs) →</span>
+            </button>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- PRESENTATION BOTTOM CONTROLS BAR -->
+    <div class="presentation-controls-bar" id="presentationBar">
+      <div class="container controls-inner">
+        <!-- Left: Quick Table of Contents Drawer Trigger -->
+        <button class="btn-slide-nav" onclick="toggleDrawer('tocDrawer')" title="Curriculum Overview">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg>
+          <span style="font-family:var(--font-caveat); font-size:1.25rem;">Topics</span>
+        </button>
+
+        <!-- Center: Prominent Navigation Cluster -->
+        <div class="controls-center-group">
+          <button class="btn-slide-nav" id="btnPrevSlide" onclick="navigateSlideStep(-1)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            <span>Previous</span>
+          </button>
+
+          <div class="slide-progress-info">
+            <span class="slide-counter-badge" id="slideCounterText">Slide 1 of 14</span>
+            <div class="slide-progress-track">
+              <div class="slide-progress-fill" id="slideProgressBar"></div>
+            </div>
+          </div>
+
+          <button class="btn-slide-nav btn-slide-next-highlight" id="btnNextSlide" onclick="navigateSlideStep(1)">
+            <span>Next Slide</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- Right: Keyboard Shortcut Hint -->
+        <div style="font-size:0.95rem; color:var(--pencil-grey); display:flex; align-items:center; gap:0.4rem;">
+          <kbd style="background:var(--paper-card); border:1.5px solid var(--ink-blue); border-radius:4px; padding:2px 7px; font-weight:700; font-family:var(--font-mono); font-size:0.85rem;">←</kbd>
+          <kbd style="background:var(--paper-card); border:1.5px solid var(--ink-blue); border-radius:4px; padding:2px 7px; font-weight:700; font-family:var(--font-mono); font-size:0.85rem;">→</kbd>
+          <span style="font-family:var(--font-caveat); font-size:1.15rem; color:var(--ink-blue);">Keys</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         VIEW 2: DIGITAL TEXTBOOK (READER)
+         ========================================================================= -->
+    <div id="viewReader" class="learning-view">
+      <article class="reader-article tape-top">
+        <header class="reader-header">
+          <div style="font-family:var(--font-caveat); font-size:1.5rem; color:var(--alert-red); font-weight:700;">
+            Chapter 01 Complete Engineering Handbook
+          </div>
+          <h1 class="reader-main-title">What is a Backend & How Does it Work Behind the Scenes?</h1>
+          <p style="font-size:1.25rem; color:var(--pencil-light); max-width:680px; margin:0 auto;">
+            A complete, verbatim transcript analysis and architectural handbook covering the physical and logical lifecycle of an HTTP request.
+          </p>
+        </header>
+
+        <section class="reader-section">
+          <h2 class="reader-section-title">1. The Traditional Definition vs Physical Reality</h2>
+          <p class="reader-p">
+            In its traditional definition, a backend is simply a computer that is continuously listening for HTTP, WebSocket, gRPC, or other network requests through open ports (such as Port 80 for HTTP or Port 443 for HTTPS) that are accessible over the public Internet.
+          </p>
+          <p class="reader-p">
+            We call this computer a <strong>"server"</strong> for one straightforward reason: it provides or <em>serves</em> content. This content can be static files (HTML documents, CSS style sheets, JavaScript bundles, client images, custom fonts) or structured serialized data (JSON objects). Furthermore, the server accepts incoming data sent by clients and modifies persistent records accordingly.
+          </p>
+          <div class="sticky-note">
+            <div class="sticky-title">The Physical Perspective:</div>
+            <p class="reader-p" style="margin:0;">
+              Software engineers frequently treat "the cloud" or "the backend" as a mystical abstraction. But behind every URL you type is a piece of silicon, copper, optical glass, and operating system kernel running software that responds to incoming binary socket buffers.
+            </p>
+          </div>
+        </section>
+
+        <section class="reader-section">
+          <h2 class="reader-section-title">2. Tracing the 6-Hop End-to-End Request Journey</h2>
+          <p class="reader-p">
+            To demonstrate this with production fidelity, the instructor sets up an AWS EC2 instance running a live backend at <code style="font-family:var(--font-mono); color:var(--ink-blue);">https://backend-demo.senus.xyz/users</code>. When a user navigates to this URL in a web browser, trace the exact hops the packet takes:
+          </p>
+
+          <h3 style="font-family:var(--font-architect); font-size:1.35rem; color:var(--ink-blue); margin:1.5rem 0 0.5rem;">Hop 1: The Browser Request Socket</h3>
+          <p class="reader-p">
+            The browser takes the target URL and creates an HTTP/1.1 or HTTP/2 GET request. Before sending data, it inspects the host string <code style="font-family:var(--font-mono);">backend-demo.senus.xyz</code>. Because internet routers operate strictly on IP addresses rather than human-readable domain names, the browser immediately queries the Domain Name System.
+          </p>
+
+          <h3 style="font-family:var(--font-architect); font-size:1.35rem; color:var(--ink-blue); margin:1.5rem 0 0.5rem;">Hop 2: Authoritative DNS Resolution</h3>
+          <p class="reader-p">
+            The DNS server inspects its configured zone records:
+          </p>
+          <ul style="margin-left:1.5rem; margin-bottom:1rem; font-size:1.15rem;">
+            <li><strong>A-Records (Address Records):</strong> Point a domain or subdomain directly to an IPv4 address. Here, <code style="font-family:var(--font-mono);">backend-demo</code> has an A-record pointing to the public IP of the AWS EC2 instance.</li>
+            <li><strong>CNAME Records (Canonical Name):</strong> Point a domain to another domain or subdomain rather than directly to an IP.</li>
+          </ul>
+          <p class="reader-p">
+            With the IP in hand, the browser initiates a TCP 3-way handshake (SYN → SYN-ACK → ACK) and TLS negotiation over Port 443 directly with that IP.
+          </p>
+
+          <h3 style="font-family:var(--font-architect); font-size:1.35rem; color:var(--ink-blue); margin:1.5rem 0 0.5rem;">Hop 3: The AWS Security Group Firewall</h3>
+          <p class="reader-p">
+            Before the network packet can reach the EC2 instance's virtualized network card, it must pass through the <strong>AWS Native Firewall (Security Group)</strong>. The Security Group enforces inbound traffic rules:
+          </p>
+          <div class="sketch-code">
+Inbound Rules:
+- Port 22  (SSH)   → Allowed for remote administrative console logins.
+- Port 80  (HTTP)  → Allowed for standard unencrypted web traffic.
+- Port 443 (HTTPS) → Allowed for encrypted TLS traffic.
+- Port 3000/3001   → NOT allowed from the Internet (Silently dropped).
+          </div>
+          <p class="reader-p">
+            If a client attempts to connect to Port 3001 directly from the internet, the AWS firewall drops the packet silently at the edge. The server OS never sees the connection.
+          </p>
+
+          <h3 style="font-family:var(--font-architect); font-size:1.35rem; color:var(--ink-blue); margin:1.5rem 0 0.5rem;">Hop 4: Nginx Reverse Proxy & SSL Offloading</h3>
+          <p class="reader-p">
+            Traffic arrives on Port 443 at the EC2 instance where <strong>Nginx</strong> is listening. Nginx serves as a reverse proxy: a server that sits in front of other backend application servers to handle SSL certificates, redirects, and routing.
+          </p>
+          <p class="reader-p">
+            Certbot automatically assigns Let's Encrypt SSL certificates. If a request arrives on Port 80, Nginx redirects it to Port 443. Nginx then inspects the <code style="font-family:var(--font-mono);">server_name</code> header. Because the host is <code style="font-family:var(--font-mono);">backend-demo.senus.xyz</code>, Nginx forwards the traffic internally to <code style="font-family:var(--font-mono);">http://localhost:3001</code>.
+          </p>
+
+          <h3 style="font-family:var(--font-architect); font-size:1.35rem; color:var(--ink-blue); margin:1.5rem 0 0.5rem;">Hop 5: PM2 Process Management & Node Server</h3>
+          <p class="reader-p">
+            On the local loopback interface, a Node.js server is listening on Port 3001. It is managed by <strong>PM2</strong> (a production process manager that restarts crashed servers and handles background daemons). The Node server parses the route <code style="font-family:var(--font-mono);">/users</code>, runs application business logic, and queries persistent storage.
+          </p>
+
+          <h3 style="font-family:var(--font-architect); font-size:1.35rem; color:var(--ink-blue); margin:1.5rem 0 0.5rem;">Hop 6: Database Connection Pooling & Return Trip</h3>
+          <p class="reader-p">
+            The Node server queries PostgreSQL or MongoDB via a persistent connection pool, serializes the response records into a JSON string, and sends the HTTP response back through Nginx, out through the AWS firewall, across the internet backbone, and into the client browser!
+          </p>
+        </section>
+
+        <section class="reader-section">
+          <h2 class="reader-section-title">3. Why Do We Need Backends? (The Power of Centralized Data)</h2>
+          <p class="reader-p">
+            The instructor poses a crucial question: <em>"Why can't everything just happen on the client?"</em>
+          </p>
+          <p class="reader-p">
+            Consider the <strong>Instagram Like Flow</strong>: User A likes a photo posted by User B.
+          </p>
+          <ol style="margin-left:1.5rem; margin-bottom:1.5rem; font-size:1.15rem; line-height:1.7;">
+            <li>User A taps the Heart icon in their mobile app.</li>
+            <li>The mobile app dispatches an authenticated HTTP POST request to the backend.</li>
+            <li>The backend authenticates User A's token, verifies the post ID, and writes a persistent like record to the database.</li>
+            <li>The backend identifies User B as the post author, verifies their notification settings, and pushes a real-time notification to User B's device.</li>
+            <li>User B's phone displays the push notification.</li>
+          </ol>
+          <p class="reader-p">
+            Your client device is tailored only to your profile. It knows nothing about other users. Without a centralized backend holding global state and mediating interactions, multi-user applications cannot exist.
+          </p>
+        </section>
+
+        <section class="reader-section">
+          <h2 class="reader-section-title">4. Why Can't We Run Backend Logic on Frontends?</h2>
+          <p class="reader-p">
+            The instructor identifies four absolute architectural deal-breakers:
+          </p>
+          <div class="sticky-note sticky-note-red">
+            <strong style="font-size:1.25rem;">1. Security Sandboxing:</strong> Browsers isolate code from the local operating system to prevent malicious websites from stealing files or hijacking processes. Backends need full OS access for logs, environment secrets (<code style="font-family:var(--font-mono);">process.env</code>), and configuration vaults.
+          </div>
+          <div class="sticky-note">
+            <strong style="font-size:1.25rem;">2. CORS Restrictions:</strong> The browser blocks cross-domain network calls unless remote servers return explicit permissive CORS headers. Backend servers have raw socket freedom to query any microservice or third-party API without browser barriers.
+          </div>
+          <div class="sticky-note sticky-note-blue">
+            <strong style="font-size:1.25rem;">3. Native Database Drivers & Connection Pooling:</strong> Databases communicate via binary TCP sockets, not HTTP. Direct client connections would spawn millions of concurrent sockets, causing immediate database server collapse. Backends maintain efficient pools of 10-50 connections.
+          </div>
+          <div class="sticky-note">
+            <strong style="font-size:1.25rem;">4. Compute Power Heterogeneity:</strong> Clients run on everything from $20 low-spec phones (256MB RAM) to desktop rigs. Centralized backends guarantee consistent CPU and memory, scaling elastically on demand.
+          </div>
+        </section>
+      </article>
+    </div>
+
+    <!-- =========================================================================
+         VIEW 3: REVISION CHEAT SHEETS
+         ========================================================================= -->
+    <div id="viewRevision" class="learning-view">
+      <div class="container">
+        <h2 style="font-family:var(--font-caveat); font-size:2.8rem; color:var(--ink-blue); text-align:center; margin:2rem 0 1rem;">
+          High-Yield Architectural Revision Hub
+        </h2>
+        <p style="text-align:center; font-size:1.25rem; color:var(--pencil-light); margin-bottom:2.5rem;">
+          Quick memory sheets for system design interviews and senior engineering revision.
+        </p>
+
+        <div class="revision-grid">
+          <!-- Sheet 1 -->
+          <div class="revision-card tape-top">
+            <h3 class="revision-card-title">Frontend Runtime vs Backend Runtime</h3>
+            <table style="width:100%; border-collapse:collapse; font-size:1rem;">
+              <tr style="border-bottom:2px solid var(--ink-blue);">
+                <th style="padding:0.5rem; text-align:left;">Dimension</th>
+                <th style="padding:0.5rem; text-align:left;">Frontend</th>
+                <th style="padding:0.5rem; text-align:left;">Backend</th>
+              </tr>
+              <tr style="border-bottom:1px solid #ddd;">
+                <td style="padding:0.5rem; font-weight:700;">Runtime</td>
+                <td style="padding:0.5rem;">Browser V8 / WebKit</td>
+                <td style="padding:0.5rem;">Node.js, Go, Python, OS</td>
+              </tr>
+              <tr style="border-bottom:1px solid #ddd;">
+                <td style="padding:0.5rem; font-weight:700;">Execution</td>
+                <td style="padding:0.5rem;">Client Machine</td>
+                <td style="padding:0.5rem;">Cloud / Server CPU</td>
+              </tr>
+              <tr style="border-bottom:1px solid #ddd;">
+                <td style="padding:0.5rem; font-weight:700;">File System</td>
+                <td style="padding:0.5rem; color:var(--alert-red);">Strictly Blocked</td>
+                <td style="padding:0.5rem; color:#059669;">Full OS Access</td>
+              </tr>
+              <tr style="border-bottom:1px solid #ddd;">
+                <td style="padding:0.5rem; font-weight:700;">DB Access</td>
+                <td style="padding:0.5rem; color:var(--alert-red);">No Sockets</td>
+                <td style="padding:0.5rem; color:#059669;">Native Pool Drivers</td>
+              </tr>
+              <tr>
+                <td style="padding:0.5rem; font-weight:700;">Network Scope</td>
+                <td style="padding:0.5rem;">CORS Sandboxed</td>
+                <td style="padding:0.5rem;">Global Socket Freedom</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Sheet 2 -->
+          <div class="revision-card">
+            <h3 class="revision-card-title">DNS Record Types</h3>
+            <div style="margin-bottom:1rem;">
+              <strong style="color:var(--alert-red);">A-Record (Address):</strong>
+              <p>Maps a hostname directly to an IPv4 address. Used when pointing <code style="font-family:var(--font-mono);">backend-demo.senus.xyz</code> to the public IP of an AWS EC2 instance.</p>
+            </div>
+            <div>
+              <strong style="color:var(--ballpoint-blue);">CNAME (Canonical Name):</strong>
+              <p>Maps a hostname to another hostname / FQDN. Used when pointing subdomains to AWS Application Load Balancers, Cloudflare, or CDN distributions.</p>
+            </div>
+          </div>
+
+          <!-- Sheet 3 -->
+          <div class="revision-card">
+            <h3 class="revision-card-title">Nginx Reverse Proxy Roles</h3>
+            <ul style="margin-left:1.25rem; line-height:1.8; font-size:1.05rem;">
+              <li><strong>Port 80 → 443 Redirect:</strong> Enforces HTTPS transport security across all incoming connections automatically.</li>
+              <li><strong>SSL Offloading:</strong> Decrypts TLS packets before proxying plain HTTP over internal loopback (<code style="font-family:var(--font-mono);">localhost:3001</code>).</li>
+              <li><strong>Virtual Host Routing:</strong> Inspects HTTP <code style="font-family:var(--font-mono);">Host</code> headers to route traffic to multiple apps on one machine.</li>
+              <li><strong>Security Shield:</strong> Prevents direct internet exposure to internal application ports (3000, 3001).</li>
+            </ul>
+          </div>
+
+          <!-- Sheet 4 -->
+          <div class="revision-card">
+            <h3 class="revision-card-title">The 4 Deal-Breakers Recap</h3>
+            <ol style="margin-left:1.25rem; line-height:1.8; font-size:1.05rem;">
+              <li><strong>Sandbox:</strong> Browsers isolate code; cannot access file systems or secrets.</li>
+              <li><strong>CORS:</strong> Enforces cross-origin boundary policies on external fetches.</li>
+              <li><strong>DB Pooling:</strong> Binary socket drivers require server-side connection pools.</li>
+              <li><strong>Compute:</strong> Cloud servers scale elastically; client devices are heterogeneous.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         VIEW 4: FLASHCARDS DECK
+         ========================================================================= -->
+    <div id="viewFlashcards" class="learning-view">
+      <div class="flashcards-container">
+        <h2 style="font-family:var(--font-caveat); font-size:2.8rem; color:var(--ink-blue);">
+          Engineering Spaced-Repetition Deck
+        </h2>
+        <p style="font-size:1.2rem; color:var(--pencil-light);">
+          Click or tap the card to flip between Question and Technical Answer.
+        </p>
+
+        <div class="flashcard-scene" onclick="flipFlashcard()">
+          <div class="flashcard-inner" id="flashcardElement">
+            <div class="flashcard-face">
+              <span class="flashcard-prompt-hint" id="fcPromptCategory">NETWORKING & ARCHITECTURE</span>
+              <div class="flashcard-text" id="fcQuestionText">
+                What is the physical definition of a backend server?
+              </div>
+              <span style="font-size:0.9rem; color:#888; margin-top:1.5rem;">[ Click card to flip ]</span>
+            </div>
+            <div class="flashcard-face flashcard-back">
+              <span class="flashcard-prompt-hint" style="color:#059669;">TECHNICAL ANSWER</span>
+              <div class="flashcard-text" id="fcAnswerText" style="font-size:1.55rem;">
+                A physical or virtual computer listening for network requests (HTTP, WebSocket, gRPC) over open ports (80, 443) accessible via the Internet.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:center; align-items:center; gap:1.5rem; margin-top:1.5rem;">
+          <button onclick="prevFlashcard()" class="btn-slide-nav">← Previous Card</button>
+          <span id="fcCounterBadge" style="font-family:var(--font-caveat); font-size:1.4rem; font-weight:700;">Card 1 of 8</span>
+          <button onclick="nextFlashcard()" class="btn-slide-nav">Next Card →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         VIEW 5: SELF-ASSESSMENT QUIZ
+         ========================================================================= -->
+    <div id="viewQuiz" class="learning-view">
+      <div class="quiz-container">
+        <div style="text-align:center; margin-bottom:2.5rem;">
+          <h2 style="font-family:var(--font-caveat); font-size:3rem; color:var(--ink-blue);">
+            Chapter 01 Mastery Assessment
+          </h2>
+          <p style="font-size:1.2rem; color:var(--pencil-light);">
+            Test your comprehension of DNS, AWS firewalls, Nginx reverse proxying, and client-server runtime differences.
+          </p>
+          <div style="margin-top:1rem; font-family:var(--font-caveat); font-size:1.6rem; color:var(--alert-red); font-weight:700;">
+            Score: <span id="quizScoreText">0 / 8 Answered</span>
+          </div>
+        </div>
+
+        <div id="quizQuestionsContainer">
+          <!-- Dynamically generated via JavaScript -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- =========================================================================
+       SEARCH MODAL
+       ========================================================================= -->
+  <div class="modal-backdrop" id="searchModalBackdrop" onclick="handleSearchModalClick(event)">
+    <div style="background:var(--paper-card); border:3px solid var(--ink-blue); border-radius:16px; width:100%; max-width:620px; box-shadow:8px 10px 0px 0px var(--ink-blue); overflow:hidden;">
+      <div style="padding:1rem 1.25rem; border-bottom:2px dashed var(--ink-blue); display:flex; align-items:center; gap:0.75rem;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="chapterSearchInput" placeholder="Search Chapter 01 notes (e.g. Nginx, DNS, Port, CORS, PM2)..." style="flex:1; border:none; background:transparent; font-family: 'Lexend', sans-serif;
+      font-optical-sizing: auto; font-size:1.25rem; outline:none;" oninput="handleSearchType()">
+        <button onclick="closeSearchModal()" style="font-weight:700; color:var(--alert-red); font-size:1.1rem;">ESC</button>
+      </div>
+      <div id="searchResultsList" style="max-height:360px; overflow-y:auto; padding:1rem;">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       DRAWERS: TOC & PERSONAL NOTES
+       ========================================================================= -->
+  <div class="drawer-panel" id="tocDrawer">
+    <div class="drawer-header">
+      <h3 style="font-family:var(--font-caveat); font-size:1.85rem; color:var(--ink-blue);">Table of Contents</h3>
+      <button onclick="toggleDrawer('tocDrawer')" style="font-size:1.4rem; font-weight:700;">✕</button>
+    </div>
+    <div id="tocLinksContainer" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:0.6rem;">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
+  <div class="drawer-panel" id="notesDrawer">
+    <div class="drawer-header">
+      <h3 style="font-family:var(--font-caveat); font-size:1.85rem; color:var(--ink-blue);">My Sketch Notepad</h3>
+      <button onclick="toggleDrawer('notesDrawer')" style="font-size:1.4rem; font-weight:700;">✕</button>
+    </div>
+    <p style="font-size:0.95rem; color:#555; margin-bottom:0.75rem;">Notes are saved automatically to your browser's local storage:</p>
+    <textarea id="personalNotepadArea" style="flex:1; width:100%; padding:1rem; border:2px solid var(--ink-blue); border-radius:10px; font-family: 'Lexend', sans-serif;
+      font-optical-sizing: auto; font-size:1.15rem; background:#FFFFA5; outline:none; resize:none;" oninput="savePersonalNotes()"></textarea>
+  </div>
+
+  <!-- =========================================================================
+       PAGE LOGIC & SIMULATORS JAVASCRIPT
+       ========================================================================= -->
+  <script>
+    const state = {
+      currentView: 'presentation',
+      currentSlide: 0,
+      totalSlides: 14,
+      flashcardIndex: 0,
+      quizAnswers: {},
+      sgPorts: { 80: true, 443: true, 22: true, 3000: false, 3001: false }
+    };
+
+    /* -------------------------------------------------------------------------
+       VIEW SWITCHER & DEEP LINKING
+       ------------------------------------------------------------------------- */
+    function switchView(viewName) {
+      state.currentView = viewName;
+
+      document.querySelectorAll('.learning-view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.view-tab-btn').forEach(b => b.classList.remove('active'));
+
+      const targetView = document.getElementById('view' + viewName.charAt(0).toUpperCase() + viewName.slice(1));
+      if (targetView) targetView.classList.add('active');
+
+      const targetTab = document.querySelector(`.view-tab-btn[data-view="${viewName}"]`);
+      if (targetTab) targetTab.classList.add('active');
+
+      const isPres = (viewName === 'presentation');
+      const presBar = document.getElementById('presentationBar');
+      if (presBar) {
+        presBar.style.display = isPres ? 'flex' : 'none';
+      }
+
+      const floatPrev = document.getElementById('floatPrevSlide');
+      const floatNext = document.getElementById('floatNextSlide');
+      if (floatPrev) floatPrev.style.display = isPres ? 'flex' : 'none';
+      if (floatNext) floatNext.style.display = isPres ? 'flex' : 'none';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* -------------------------------------------------------------------------
+       SLIDE NAVIGATION
+       ------------------------------------------------------------------------- */
+    function navigateToSlide(idx) {
+      if (idx < 0 || idx >= state.totalSlides) return;
+      state.currentSlide = idx;
+
+      document.querySelectorAll('.slide-wrapper').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+      });
+
+      const counter = document.getElementById('slideCounterText');
+      if (counter) counter.textContent = `Slide ${idx + 1} of ${state.totalSlides}`;
+
+      const progress = document.getElementById('slideProgressBar');
+      if (progress) progress.style.width = `${((idx + 1) / state.totalSlides) * 100}%`;
+
+      const btnPrev = document.getElementById('btnPrevSlide');
+      const btnNext = document.getElementById('btnNextSlide');
+      if (btnPrev) btnPrev.disabled = (idx === 0);
+      if (btnNext) btnNext.disabled = (idx === state.totalSlides - 1);
+
+      const floatPrev = document.getElementById('floatPrevSlide');
+      const floatNext = document.getElementById('floatNextSlide');
+      if (floatPrev) floatPrev.disabled = (idx === 0);
+      if (floatNext) floatNext.disabled = (idx === state.totalSlides - 1);
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function navigateSlideStep(step) {
+      navigateToSlide(state.currentSlide + step);
+    }
+
+
+
+    /* -------------------------------------------------------------------------
+       SIMULATOR 1: PACKET TRACER
+       ------------------------------------------------------------------------- */
+    function runPacketTracerSim() {
+      const nodes = [
+        { id: 'pipeNode1', text: '1. Browser creates TCP socket connection to port 443' },
+        { id: 'pipeNode2', text: '2. DNS Authoritative Server resolves backend-demo.senus.xyz → 54.210.88.14' },
+        { id: 'pipeNode3', text: '3. AWS Security Group firewall permits packet through port 443' },
+        { id: 'pipeNode4', text: '4. Nginx reverse proxy accepts TLS connection and routes to localhost:3001' },
+        { id: 'pipeNode5', text: '5. PM2 Node.js server executes route logic for GET /users' },
+        { id: 'pipeNode6', text: '6. Database connection pool executes SQL SELECT * FROM users and returns JSON' }
+      ];
+
+      const terminal = document.getElementById('simLogTerminal');
+      let step = 0;
+
+      function stepTrace() {
+        document.querySelectorAll('.pipeline-node').forEach(n => n.classList.remove('active-hop'));
+        if (step < nodes.length) {
+          const curr = nodes[step];
+          const el = document.getElementById(curr.id);
+          if (el) el.classList.add('active-hop');
+          if (terminal) terminal.innerHTML += `<br><span style="color:#86efac;">[TRACE]</span> ${curr.text}`;
+          step++;
+          setTimeout(stepTrace, 450);
+        } else {
+          if (terminal) terminal.innerHTML += `<br><strong style="color:#fde047;">[SUCCESS] HTTP 200 OK Response delivered back to Browser!</strong>`;
+        }
+      }
+
+      if (terminal) terminal.innerHTML = '<span style="color:#93c5fd;">[START] Dispatched request from client...</span>';
+      stepTrace();
+    }
+
+    /* -------------------------------------------------------------------------
+       SIMULATOR 2: DNS LOOKUP
+       ------------------------------------------------------------------------- */
+    function simulateDnsLookup() {
+      const input = document.getElementById('dnsSubdomainInput').value.trim().toLowerCase();
+      const res = document.getElementById('dnsLookupResult');
+      if (!res) return;
+
+      if (input === 'backend-demo') {
+        res.innerHTML = `<strong>Record Type:</strong> A-Record | <strong>Target IP:</strong> 54.210.88.14 (AWS EC2 Instance) | <strong>TTL:</strong> 300s | <strong>Status:</strong> Active`;
+      } else if (input === 'frontend-demo') {
+        res.innerHTML = `<strong>Record Type:</strong> A-Record | <strong>Target IP:</strong> 54.210.88.14 (Same EC2 Machine, Port 3000) | <strong>TTL:</strong> 300s`;
+      } else if (input === 'api' || input === 'www') {
+        res.innerHTML = `<strong>Record Type:</strong> CNAME Record | <strong>Points To:</strong> backend-demo.senus.xyz | <strong>TTL:</strong> 600s`;
+      } else {
+        res.innerHTML = `<span style="color:var(--alert-red);"><strong>NXDOMAIN:</strong> No DNS record exists for '${input}.senus.xyz'. Packets cannot be routed.</span>`;
+      }
+    }
+
+    /* -------------------------------------------------------------------------
+       SIMULATOR 3: AWS SECURITY GROUP TOGGLE
+       ------------------------------------------------------------------------- */
+    function toggleSgPort(port) {
+      state.sgPorts[port] = !state.sgPorts[port];
+      const btn = document.getElementById('sgPort' + port);
+      if (!btn) return;
+
+      if (state.sgPorts[port]) {
+        btn.className = 'port-btn allowed';
+        btn.querySelector('span').textContent = 'ALLOWED';
+      } else {
+        btn.className = 'port-btn blocked';
+        btn.querySelector('span').textContent = 'BLOCKED (Dropped)';
+      }
+    }
+
+    /* -------------------------------------------------------------------------
+       SIMULATOR 4: INSTAGRAM LIKE STATE MACHINE
+       ------------------------------------------------------------------------- */
+    function triggerInstaLikeSim() {
+      const disp = document.getElementById('instaStepDisplay');
+      if (!disp) return;
+
+      disp.innerHTML = `
+        <div style="color:var(--alert-red); font-weight:700;">Step 1: Client Network Dispatch</div>
+        <p>User A taps Heart. App dispatches <code style="font-family:var(--font-mono);">POST /api/posts/1042/likes</code> with JWT header.</p>
+      `;
+
+      setTimeout(() => {
+        disp.innerHTML += `
+          <div style="color:var(--ink-blue); font-weight:700; margin-top:0.75rem;">Step 2: Server Persistence & Verification</div>
+          <p>Backend parses JWT (User A = id: 91). Runs: <code style="font-family:var(--font-mono);">INSERT INTO likes (post_id, user_id) VALUES (1042, 91);</code></p>
+        `;
+      }, 700);
+
+      setTimeout(() => {
+        disp.innerHTML += `
+          <div style="color:#059669; font-weight:700; margin-top:0.75rem;">Step 3: Cross-User Asynchronous Notification</div>
+          <p>Server queries author of post 1042 (User B = id: 48). Triggers push notification service to User B's device: <em>"User A liked your photo!"</em></p>
+        `;
+      }, 1500);
+    }
+
+    /* -------------------------------------------------------------------------
+       SIMULATOR 5: CONNECTION POOLING SLIDER
+       ------------------------------------------------------------------------- */
+    function updateDbPoolSim(val) {
+      const display = document.getElementById('userCountDisplay');
+      const statusEl = document.getElementById('dbSimStatusResult');
+      if (display) display.textContent = val;
+      if (!statusEl) return;
+
+      const users = parseInt(val, 10);
+      if (users <= 1000) {
+        statusEl.innerHTML = `
+          <span style="color:#059669; font-weight:700;">✅ HEALTHY:</span> 
+          Using <strong>Connection Pool of 20 connections</strong>. Direct socket load: 0%. Database CPU at 4%. Every query served in ~1.2ms.
+        `;
+      } else if (users <= 8000) {
+        statusEl.innerHTML = `
+          <span style="color:#d97706; font-weight:700;">⚡ MODERATE LOAD:</span> 
+          Connection Pool queues requests efficiently. Max pool size: 35 connections. Database CPU at 32%. No connections dropped.
+        `;
+      } else {
+        statusEl.innerHTML = `
+          <span style="color:#dc2626; font-weight:700;">⚠️ DISASTER WITHOUT CONNECTION POOL:</span> 
+          Without pooling, ${users} concurrent clients would attempt ${users} raw TCP connections to Postgres, exhausting <code style="font-family:var(--font-mono);">max_connections</code> and crashing the DB in seconds! <br>
+          <span style="color:#059669; font-weight:700;">WITH CONNECTION POOLING:</span> Backend queues queries over 50 persistent connections. Zero crashes!
+        `;
+      }
+    }
+
+    /* -------------------------------------------------------------------------
+       FLASHCARDS DATA & LOGIC
+       ------------------------------------------------------------------------- */
+    const flashcardsData = [
+      {
+        cat: "PHYSICAL FOUNDATIONS",
+        q: "What is a backend in its traditional, physical definition?",
+        a: "A physical or virtual computer listening for network requests (HTTP, WebSocket, gRPC) through open ports (like 80 or 443) accessible over the Internet."
+      },
+      {
+        cat: "NETWORKING & DNS",
+        q: "What is the difference between an A-Record and a CNAME record?",
+        a: "An A-Record points a domain directly to an IPv4 address (e.g. AWS EC2 IP). A CNAME points an alias domain to another canonical domain name."
+      },
+      {
+        cat: "CLOUD SECURITY",
+        q: "What happens if a port is NOT allowed in an AWS Security Group?",
+        a: "AWS drops the packet silently at the cloud perimeter firewall. The server operating system never receives the connection, and the client times out."
+      },
+      {
+        cat: "REVERSE PROXIES",
+        q: "What are the two major responsibilities of Nginx in this architecture?",
+        a: "1) SSL termination & port 80→443 redirection via Certbot. 2) Virtual host routing (proxy_pass) to internal application ports like localhost:3001."
+      },
+      {
+        cat: "SYSTEM PURPOSE",
+        q: "If stripped down to one single word, what is the core responsibility of a backend?",
+        a: "DATA: The absolute requirement to receive data, persist data, and fetch/serve data across multiple distributed users."
+      },
+      {
+        cat: "FRONTEND VS BACKEND",
+        q: "Where does the code for frontend applications actually execute?",
+        a: "In the client's browser engine (V8, WebKit)! The server only transmits the code files; the user's machine is the execution runtime."
+      },
+      {
+        cat: "SECURITY DEAL-BREAKER",
+        q: "Why can't frontend browsers access the server's local file system or env secrets?",
+        a: "Browser sandbox isolation prevents remote website scripts from touching the local operating system, private files, or system processes."
+      },
+      {
+        cat: "DATABASE ENGINEERING",
+        q: "Why do backend servers maintain a connection pool rather than opening fresh connections?",
+        a: "Creating database TCP sockets has heavy CPU overhead. A connection pool reuses 10-50 persistent connections, preventing database server collapse."
+      }
+    ];
+
+    function flipFlashcard() {
+      const card = document.getElementById('flashcardElement');
+      if (card) card.classList.toggle('flipped');
+    }
+
+    function renderFlashcard() {
+      const card = document.getElementById('flashcardElement');
+      if (card) card.classList.remove('flipped');
+
+      const item = flashcardsData[state.flashcardIndex];
+      document.getElementById('fcPromptCategory').textContent = item.cat;
+      document.getElementById('fcQuestionText').textContent = item.q;
+      document.getElementById('fcAnswerText').textContent = item.a;
+      document.getElementById('fcCounterBadge').textContent = `Card ${state.flashcardIndex + 1} of ${flashcardsData.length}`;
+    }
+
+    function nextFlashcard() {
+      state.flashcardIndex = (state.flashcardIndex + 1) % flashcardsData.length;
+      renderFlashcard();
+    }
+
+    function prevFlashcard() {
+      state.flashcardIndex = (state.flashcardIndex - 1 + flashcardsData.length) % flashcardsData.length;
+      renderFlashcard();
+    }
+
+    /* -------------------------------------------------------------------------
+       SELF-ASSESSMENT QUIZ DATA & LOGIC
+       ------------------------------------------------------------------------- */
+    const quizData = [
+      {
+        q: "1. Why do we refer to a backend computer as a 'server'?",
+        options: [
+          "Because it serves or provides content (static files or JSON) to requesting clients.",
+          "Because it is physically mounted in a server rack cabinet.",
+          "Because it must always run Linux rather than Windows or macOS.",
+          "Because it is required to use GraphQL protocols."
+        ],
+        answer: 0,
+        explanation: "In networking, a server is named after its physical role: it provides (serves) resources, assets, or data payloads to client machines upon request."
+      },
+      {
+        q: "2. When a browser visits 'backend-demo.senus.xyz', how does it discover the server's IP address?",
+        options: [
+          "It queries the DNS server for the subdomain's A-Record.",
+          "It broadcasts a packet to all computers on the local Wi-Fi router.",
+          "It executes an Nginx rewrite rule locally on the client.",
+          "It queries the PM2 process table in the browser."
+        ],
+        answer: 0,
+        explanation: "The Domain Name System (DNS) resolves human-friendly hostnames to routable IPv4 addresses via A-records."
+      },
+      {
+        q: "3. If Port 3001 is running on an AWS EC2 instance, but is NOT allowed in the AWS Security Group inbound rules, what happens when an external client attempts to connect to it?",
+        options: [
+          "AWS drops the packet silently at the perimeter firewall, causing a client timeout.",
+          "The server returns an HTTP 403 Forbidden error response.",
+          "Nginx automatically redirects the request to Port 80.",
+          "PM2 restarts the Node.js process to handle the traffic."
+        ],
+        answer: 0,
+        explanation: "AWS Security Groups are perimeter firewalls. Unlisted ports are dropped immediately at the AWS border; the packet never reaches the server operating system."
+      },
+      {
+        q: "4. What is a 'Reverse Proxy' such as Nginx used for?",
+        options: [
+          "It sits in front of backend servers to handle SSL termination, redirects, and virtual host routing.",
+          "It is used by clients to bypass regional internet restrictions.",
+          "It stores database tables in RAM like Redis.",
+          "It compiles JavaScript into native machine code."
+        ],
+        answer: 0,
+        explanation: "A reverse proxy acts as an intermediary for servers, providing a centralized entry point for SSL offloading, caching, port redirects, and security."
+      },
+      {
+        q: "5. In the Instagram Like example, why is a centralized backend strictly required?",
+        options: [
+          "Because only a centralized server holding global state can coordinate persistence and notify User B about User A's action.",
+          "Because mobile apps do not have screens large enough to run database queries.",
+          "Because HTTP is an unencrypted protocol.",
+          "Because Apple App Store guidelines prohibit local storage."
+        ],
+        answer: 0,
+        explanation: "User A and User B are independent, isolated client devices. Only a centralized backend with shared database authority can coordinate cross-user state changes and push notifications."
+      },
+      {
+        q: "6. Why can't frontend JavaScript in a browser access the operating system's local file system?",
+        options: [
+          "Due to browser sandbox isolation designed to protect users from malicious code.",
+          "Because JavaScript does not support strings or buffers.",
+          "Because browsers only execute assembly code.",
+          "Because operating systems do not have file systems."
+        ],
+        answer: 0,
+        explanation: "Browsers run JavaScript inside an isolated sandbox so visiting an arbitrary website cannot steal your private documents, passwords, or system files."
+      },
+      {
+        q: "7. Why is database connection pooling crucial for backend systems?",
+        options: [
+          "It maintains a steady pool of persistent sockets, preventing databases from collapsing under thousands of concurrent connection attempts.",
+          "It allows databases to run without requiring RAM.",
+          "It encrypts passwords using bcrypt automatically.",
+          "It replaces the need for SQL queries entirely."
+        ],
+        answer: 0,
+        explanation: "Opening and closing TCP connections to databases is computationally expensive. Connection pooling reuses a small set of open connections to serve immense traffic efficiently."
+      },
+      {
+        q: "8. What process manager does the instructor use on the AWS EC2 instance to keep Node running?",
+        options: [
+          "PM2",
+          "Docker Compose",
+          "Kubernetes Kubelet",
+          "Apache HTTPD"
+        ],
+        answer: 0,
+        explanation: "The instructor runs 'pm2 list' in the terminal to demonstrate that PM2 is actively managing the frontend Next.js process (Port 3000) and backend Node process (Port 3001)."
+      }
+    ];
+
+    function buildQuiz() {
+      const container = document.getElementById('quizQuestionsContainer');
+      if (!container) return;
+
+      container.innerHTML = quizData.map((item, qIdx) => `
+        <div class="quiz-question-card" id="quizCard${qIdx}">
+          <div class="quiz-q-num">Question ${qIdx + 1} of ${quizData.length}</div>
+          <div class="quiz-q-text">${item.q}</div>
+          <div class="quiz-options-list">
+            ${item.options.map((opt, oIdx) => `
+              <button class="quiz-option-btn" onclick="selectQuizAnswer(${qIdx}, ${oIdx})">
+                <span style="font-weight:700; font-family:var(--font-mono);">${String.fromCharCode(65 + oIdx)}.</span>
+                <span>${opt}</span>
+              </button>
+            `).join('')}
+          </div>
+          <div class="quiz-explanation-box" id="quizExpl${qIdx}">
+            <strong>Technical Explanation:</strong> ${item.explanation}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectQuizAnswer(qIdx, oIdx) {
+      if (state.quizAnswers[qIdx] !== undefined) return;
+      state.quizAnswers[qIdx] = oIdx;
+
+      const q = quizData[qIdx];
+      const card = document.getElementById(`quizCard${qIdx}`);
+      const btns = card.querySelectorAll('.quiz-option-btn');
+
+      btns.forEach((btn, idx) => {
+        btn.classList.add('answered');
+        if (idx === q.answer) {
+          btn.classList.add('correct');
+        } else if (idx === oIdx) {
+          btn.classList.add('incorrect');
+        }
+      });
+
+      const expl = document.getElementById(`quizExpl${qIdx}`);
+      if (expl) expl.style.display = 'block';
+
+      // Update Score
+      const answeredCount = Object.keys(state.quizAnswers).length;
+      let correctCount = 0;
+      Object.entries(state.quizAnswers).forEach(([qi, ans]) => {
+        if (quizData[qi].answer === ans) correctCount++;
+      });
+      document.getElementById('quizScoreText').textContent = `${correctCount} Correct / ${answeredCount} Answered (${Math.round((correctCount / quizData.length) * 100)}%)`;
+    }
+
+    /* -------------------------------------------------------------------------
+       SEARCH ENGINE & MODAL
+       ------------------------------------------------------------------------- */
+    const searchTopics = [
+      { title: "Physical Definition of Backend", snippet: "Computer listening for requests on ports 80/443; serves static files & JSON.", slide: 0, view: 'presentation' },
+      { title: "Live AWS EC2 Demo", snippet: "senus.xyz domain, backend-demo subdomain, disabling cache in network toolbar.", slide: 1, view: 'presentation' },
+      { title: "The 6 Physical Request Hops", snippet: "Browser → DNS → AWS Firewall → Nginx → PM2 Node → Database Pool.", slide: 2, view: 'presentation' },
+      { title: "DNS A-Records vs CNAME Records", snippet: "A-records point to raw IPv4 addresses; CNAME records point to canonical domains.", slide: 3, view: 'presentation' },
+      { title: "AWS Security Group Firewall", snippet: "Silent drop rule: unlisted ports (3000, 3001) are silently dropped at the edge.", slide: 4, view: 'presentation' },
+      { title: "Nginx Reverse Proxy & Certbot SSL", snippet: "Port 80 redirect to 443; Certbot automatic certificates; proxy_pass localhost:3001.", slide: 5, view: 'presentation' },
+      { title: "PM2 Process Manager", snippet: "pm2 list command; running multiple frontend and backend node daemons.", slide: 6, view: 'presentation' },
+      { title: "Why Backends Exist: DATA", snippet: "The single word: DATA. Fetch data, receive data, persist data permanently.", slide: 7, view: 'presentation' },
+      { title: "Instagram Like Case Study", snippet: "User A clicks like, server persists to DB, triggers push notification to User B.", slide: 8, view: 'presentation' },
+      { title: "How Frontends Work (Hydration)", snippet: "Server sends files; browser is the runtime executing JavaScript locally.", slide: 9, view: 'presentation' },
+      { title: "Sandbox Isolation & CORS Policies", snippet: "Browsers isolate code; cannot access file systems or cross-origin APIs.", slide: 10, view: 'presentation' },
+      { title: "Native DB Drivers & Connection Pools", snippet: "Binary TCP sockets; why connection pooling prevents database server collapse.", slide: 11, view: 'presentation' },
+      { title: "Heterogeneous Client Hardware", snippet: "256MB RAM phones vs centralized elastic servers with 64GB RAM.", slide: 12, view: 'presentation' }
+    ];
+
+    function openSearchModal() {
+      const modal = document.getElementById('searchModalBackdrop');
+      if (modal) {
+        modal.classList.add('open');
+        const input = document.getElementById('chapterSearchInput');
+        input.value = '';
+        input.focus();
+        renderSearchResults('');
+      }
+    }
+
+    function closeSearchModal() {
+      const modal = document.getElementById('searchModalBackdrop');
+      if (modal) modal.classList.remove('open');
+    }
+
+    function handleSearchModalClick(e) {
+      if (e.target.id === 'searchModalBackdrop') closeSearchModal();
+    }
+
+    function handleSearchType() {
+      const q = document.getElementById('chapterSearchInput').value.toLowerCase().trim();
+      renderSearchResults(q);
+    }
+
+    function renderSearchResults(q) {
+      const list = document.getElementById('searchResultsList');
+      if (!list) return;
+
+      const filtered = q.length === 0 ? searchTopics.slice(0, 5) : searchTopics.filter(t => 
+        t.title.toLowerCase().includes(q) || t.snippet.toLowerCase().includes(q)
+      );
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<div style="text-align:center; padding:1.5rem; color:#888;">No notes match "${q}". Try 'DNS', 'Nginx', 'CORS', or 'Pool'.</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map(item => `
+        <div style="padding:0.75rem; border-bottom:1px dashed #cbd5e1; cursor:pointer;" onclick="jumpToSearchResult(${item.slide}, '${item.view}')">
+          <div style="font-family:var(--font-architect); font-weight:700; color:var(--ink-blue); font-size:1.15rem;">${item.title}</div>
+          <div style="font-size:0.95rem; color:#555;">${item.snippet}</div>
+        </div>
+      `).join('');
+    }
+
+    function jumpToSearchResult(slideIdx, viewName) {
+      closeSearchModal();
+      switchView(viewName);
+      if (viewName === 'presentation') {
+        navigateToSlide(slideIdx);
+      }
+    }
+
+    /* -------------------------------------------------------------------------
+       DRAWERS: TOC & NOTEPAD
+       ------------------------------------------------------------------------- */
+    function toggleDrawer(id) {
+      const drawer = document.getElementById(id);
+      if (drawer) drawer.classList.toggle('open');
+    }
+
+    function buildTOC() {
+      const container = document.getElementById('tocLinksContainer');
+      if (!container) return;
+
+      container.innerHTML = searchTopics.map((item, idx) => `
+        <button style="text-align:left; padding:0.6rem 0.8rem; border-radius:8px; border:1px solid #cbd5e1; background:#fff; font-size:1.05rem;" onclick="navigateToSlide(${idx}); toggleDrawer('tocDrawer'); switchView('presentation');">
+          <span style="color:var(--alert-red); font-family:var(--font-caveat); font-weight:700; margin-right:0.4rem;">Slide ${idx + 1}:</span>
+          <span>${item.title}</span>
+        </button>
+      `).join('');
+    }
+
+    function savePersonalNotes() {
+      const text = document.getElementById('personalNotepadArea').value;
+      localStorage.setItem('backend_notes_ch01_notepad', text);
+    }
+
+    function loadPersonalNotes() {
+      const text = localStorage.getItem('backend_notes_ch01_notepad') || '';
+      const area = document.getElementById('personalNotepadArea');
+      if (area) area.value = text;
+    }
+
+    /* -------------------------------------------------------------------------
+       KEYBOARD SHORTCUTS
+       ------------------------------------------------------------------------- */
+    document.addEventListener('keydown', (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        if (e.key === 'Escape') {
+          closeSearchModal();
+          document.querySelectorAll('.drawer-panel').forEach(d => d.classList.remove('open'));
+        }
+        return;
+      }
+
+      if (e.key === '/' || (e.ctrlKey && e.key.toLowerCase() === 'k')) {
+        e.preventDefault();
+        openSearchModal();
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        closeSearchModal();
+        document.querySelectorAll('.drawer-panel').forEach(d => d.classList.remove('open'));
+        return;
+      }
+
+      if (state.currentView === 'presentation') {
+        if (e.key === 'ArrowRight' || e.key === ' ') {
+          e.preventDefault();
+          navigateSlideStep(1);
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          navigateSlideStep(-1);
+        }
+      }
+    });
+
+    /* -------------------------------------------------------------------------
+       INITIALIZATION & DOM HOOKS
+       ------------------------------------------------------------------------- */
+    document.addEventListener('DOMContentLoaded', () => {
+      buildTOC();
+      loadPersonalNotes();
+      renderFlashcard();
+      buildQuiz();
+      updateDbPoolSim(500);
+
+      // Deep Linking Query Parameters
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const reqView = params.get('view');
+        if (reqView && ['presentation', 'reader', 'revision', 'flashcards', 'quiz'].includes(reqView)) {
+          switchView(reqView);
+        }
+        const reqSlide = parseInt(params.get('slide'), 10);
+        if (!isNaN(reqSlide) && reqSlide >= 0 && reqSlide < state.totalSlides) {
+          navigateToSlide(reqSlide);
+        } else {
+          navigateToSlide(0);
+        }
+      } catch (err) {
+        console.warn('Query param parse skipped:', err);
+      }
+    });
+  </script>
+</body>
+</html>
