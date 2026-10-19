@@ -208,6 +208,10 @@ def get_head_css():
       animation: fadeIn 0.25s ease-in-out;
     }
     .slide-wrapper.active { display: block; }
+    .presentation-deck.scroll-all-mode .slide-wrapper {
+      display: block !important;
+      margin-bottom: 2.5rem;
+    }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
@@ -808,6 +812,11 @@ def get_deck_controls():
         <button id="nextSlideBtn" class="deck-nav-btn primary" onclick="navigateSlide(1)">
           <span>Next</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+
+        <button id="toggleScrollModeBtn" class="deck-nav-btn" onclick="toggleScrollAllMode()" title="Toggle between single slide and viewing all slides stacked" style="margin-left:0.5rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          <span id="scrollModeBtnText">Scroll All Slides</span>
         </button>
       </div>
 """

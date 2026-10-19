@@ -206,6 +206,10 @@
       animation: fadeIn 0.25s ease-in-out;
     }
     .slide-wrapper.active { display: block; }
+    .presentation-deck.scroll-all-mode .slide-wrapper {
+      display: block !important;
+      margin-bottom: 2.5rem;
+    }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
@@ -2659,6 +2663,11 @@ X-Served-By: decrypt-worker-03</code></pre>
           <span>Next</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
+
+        <button id="toggleScrollModeBtn" class="deck-nav-btn" onclick="toggleScrollAllMode()" title="Toggle between single slide and viewing all slides stacked" style="margin-left:0.5rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          <span id="scrollModeBtnText">Scroll All Slides</span>
+        </button>
       </div>
 
     <!-- =========================================================================
@@ -3456,6 +3465,7 @@ CREATE INDEX idx_urls_expires_at ON urls (expires_at) WHERE expires_at IS NOT NU
     let currentSlide = 1;
     const totalSlides = 24;
     let currentView = 'presentation';
+    let isScrollAllMode = false;
 
     // Search Index
     const searchIndex = [
@@ -3516,8 +3526,8 @@ CREATE INDEX idx_urls_expires_at ON urls (expires_at) WHERE expires_at IS NOT NU
         if (el) el.style.display = (v === viewName + 'View') ? 'block' : 'none';
       });
 
-      // Update View Buttons in Header
-      document.querySelectorAll('.view-btn').forEach(btn => {
+      // Update View Tab Buttons in Header
+      document.querySelectorAll('.view-tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-view') === viewName);
       });
 
@@ -3538,17 +3548,28 @@ CREATE INDEX idx_urls_expires_at ON urls (expires_at) WHERE expires_at IS NOT NU
     }
 
     function jumpToSlide(slideNum) {
+      if (slideNum < 1) slideNum = 1;
+      if (slideNum > totalSlides) slideNum = totalSlides;
       currentSlide = slideNum;
-      document.querySelectorAll('.slide-card').forEach(slide => {
-        const num = parseInt(slide.getAttribute('data-slide'), 10);
-        slide.classList.toggle('active', num === currentSlide);
+      const targetIdx = slideNum - 1;
+
+      // Update slide wrapper active classes
+      const slides = document.querySelectorAll('.slide-wrapper');
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === targetIdx);
       });
 
+      // If presentation view is not active, switch to it
+      if (currentView !== 'presentation') {
+        switchView('presentation');
+      }
+
       updateSlideDisplay();
+      updateBookmarkButtons();
       closeDrawer('tocDrawer');
 
-      // Scroll smoothly to top of slide
-      const activeEl = document.querySelector(`.slide-card[data-slide="${currentSlide}"]`);
+      // Scroll smoothly to top of active slide
+      const activeEl = slides[targetIdx];
       if (activeEl) {
         activeEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -3572,7 +3593,28 @@ CREATE INDEX idx_urls_expires_at ON urls (expires_at) WHERE expires_at IS NOT NU
       if (nextBtn) nextBtn.disabled = (currentSlide === totalSlides);
     }
 
+    // Toggle between Single Slide Deck and Continuous Scroll of all 24 slides
+    function toggleScrollAllMode() {
+      isScrollAllMode = !isScrollAllMode;
+      const deck = document.getElementById('presentationView');
+      const btnText = document.getElementById('scrollModeBtnText');
+      if (deck) {
+        deck.classList.toggle('scroll-all-mode', isScrollAllMode);
+      }
+      if (btnText) {
+        btnText.textContent = isScrollAllMode ? "Single Slide Deck" : "Scroll All Slides";
+      }
+      if (!isScrollAllMode) {
+        jumpToSlide(currentSlide);
+      }
+    }
+
     // Drawers & Modals
+    function toggleDrawer(drawerId) {
+      const el = document.getElementById(drawerId);
+      if (el) el.classList.toggle('open');
+    }
+
     function openDrawer(drawerId) {
       const el = document.getElementById(drawerId);
       if (el) el.classList.add('open');
@@ -3581,6 +3623,33 @@ CREATE INDEX idx_urls_expires_at ON urls (expires_at) WHERE expires_at IS NOT NU
     function closeDrawer(drawerId) {
       const el = document.getElementById(drawerId);
       if (el) el.classList.remove('open');
+    }
+
+    // Bookmarking Logic
+    function toggleBookmarkCurrentSlide() {
+      const key = 'url_shortener_bookmarks';
+      let bookmarks = JSON.parse(localStorage.getItem(key) || '[]');
+      const idx = currentSlide;
+      if (bookmarks.includes(idx)) {
+        bookmarks = bookmarks.filter(b => b !== idx);
+      } else {
+        bookmarks.push(idx);
+      }
+      localStorage.setItem(key, JSON.stringify(bookmarks));
+      updateBookmarkButtons();
+    }
+
+    function updateBookmarkButtons() {
+      const key = 'url_shortener_bookmarks';
+      const bookmarks = JSON.parse(localStorage.getItem(key) || '[]');
+      const isBookmarked = bookmarks.includes(currentSlide);
+      const headerBtn = document.getElementById('headerBookmarkBtn');
+      if (headerBtn) {
+        headerBtn.classList.toggle('active', isBookmarked);
+      }
+      document.querySelectorAll('.slide-bookmark-btn').forEach(btn => {
+        btn.classList.toggle('bookmarked', isBookmarked);
+      });
     }
 
     // Whiteboard Modal

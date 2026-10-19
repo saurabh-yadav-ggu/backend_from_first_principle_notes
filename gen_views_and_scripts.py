@@ -810,6 +810,7 @@ def get_scripts():
     let currentSlide = 1;
     const totalSlides = 24;
     let currentView = 'presentation';
+    let isScrollAllMode = false;
 
     // Search Index
     const searchIndex = [
@@ -870,8 +871,8 @@ def get_scripts():
         if (el) el.style.display = (v === viewName + 'View') ? 'block' : 'none';
       });
 
-      // Update View Buttons in Header
-      document.querySelectorAll('.view-btn').forEach(btn => {
+      // Update View Tab Buttons in Header
+      document.querySelectorAll('.view-tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-view') === viewName);
       });
 
@@ -892,17 +893,28 @@ def get_scripts():
     }
 
     function jumpToSlide(slideNum) {
+      if (slideNum < 1) slideNum = 1;
+      if (slideNum > totalSlides) slideNum = totalSlides;
       currentSlide = slideNum;
-      document.querySelectorAll('.slide-card').forEach(slide => {
-        const num = parseInt(slide.getAttribute('data-slide'), 10);
-        slide.classList.toggle('active', num === currentSlide);
+      const targetIdx = slideNum - 1;
+
+      // Update slide wrapper active classes
+      const slides = document.querySelectorAll('.slide-wrapper');
+      slides.forEach((s, idx) => {
+        s.classList.toggle('active', idx === targetIdx);
       });
 
+      // If presentation view is not active, switch to it
+      if (currentView !== 'presentation') {
+        switchView('presentation');
+      }
+
       updateSlideDisplay();
+      updateBookmarkButtons();
       closeDrawer('tocDrawer');
 
-      // Scroll smoothly to top of slide
-      const activeEl = document.querySelector(`.slide-card[data-slide="${currentSlide}"]`);
+      // Scroll smoothly to top of active slide
+      const activeEl = slides[targetIdx];
       if (activeEl) {
         activeEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -926,7 +938,28 @@ def get_scripts():
       if (nextBtn) nextBtn.disabled = (currentSlide === totalSlides);
     }
 
+    // Toggle between Single Slide Deck and Continuous Scroll of all 24 slides
+    function toggleScrollAllMode() {
+      isScrollAllMode = !isScrollAllMode;
+      const deck = document.getElementById('presentationView');
+      const btnText = document.getElementById('scrollModeBtnText');
+      if (deck) {
+        deck.classList.toggle('scroll-all-mode', isScrollAllMode);
+      }
+      if (btnText) {
+        btnText.textContent = isScrollAllMode ? "Single Slide Deck" : "Scroll All Slides";
+      }
+      if (!isScrollAllMode) {
+        jumpToSlide(currentSlide);
+      }
+    }
+
     // Drawers & Modals
+    function toggleDrawer(drawerId) {
+      const el = document.getElementById(drawerId);
+      if (el) el.classList.toggle('open');
+    }
+
     function openDrawer(drawerId) {
       const el = document.getElementById(drawerId);
       if (el) el.classList.add('open');
@@ -935,6 +968,33 @@ def get_scripts():
     function closeDrawer(drawerId) {
       const el = document.getElementById(drawerId);
       if (el) el.classList.remove('open');
+    }
+
+    // Bookmarking Logic
+    function toggleBookmarkCurrentSlide() {
+      const key = 'url_shortener_bookmarks';
+      let bookmarks = JSON.parse(localStorage.getItem(key) || '[]');
+      const idx = currentSlide;
+      if (bookmarks.includes(idx)) {
+        bookmarks = bookmarks.filter(b => b !== idx);
+      } else {
+        bookmarks.push(idx);
+      }
+      localStorage.setItem(key, JSON.stringify(bookmarks));
+      updateBookmarkButtons();
+    }
+
+    function updateBookmarkButtons() {
+      const key = 'url_shortener_bookmarks';
+      const bookmarks = JSON.parse(localStorage.getItem(key) || '[]');
+      const isBookmarked = bookmarks.includes(currentSlide);
+      const headerBtn = document.getElementById('headerBookmarkBtn');
+      if (headerBtn) {
+        headerBtn.classList.toggle('active', isBookmarked);
+      }
+      document.querySelectorAll('.slide-bookmark-btn').forEach(btn => {
+        btn.classList.toggle('bookmarked', isBookmarked);
+      });
     }
 
     // Whiteboard Modal
