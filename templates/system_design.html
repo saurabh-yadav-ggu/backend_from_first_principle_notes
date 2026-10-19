@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Design From First Principles — Distributed Architecture Portal</title>
+  <meta name="description" content="Master production-grade distributed system design from first principles: capacity estimation, consistent hashing, caching tiers, database sharding, and real-world case studies.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="System Design From First Principles — Sketch-Note Architecture">
+  <meta property="og:description" content="Master large-scale distributed systems with intuitive hand-drawn sketch notes, architectural blueprints, and interactive simulators.">
+  <meta property="og:type" content="website">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Lexend (rules.md) & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+
+  <!-- Static CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/sketch-theme.css') }}">
+
+  <style>
+    :root {
+      --font-hand: 'Lexend', sans-serif;
+      --font-sans: 'Lexend', sans-serif;
+      --font-caveat: 'Lexend', sans-serif;
+      --font-architect: 'Lexend', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      background-color: var(--paper-note);
+      color: var(--ink-blue);
+      font-family: 'Lexend', sans-serif;
+      background-image: linear-gradient(rgba(180, 195, 220, 0.25) 1px, transparent 1px);
+      background-size: 100% 1.6em;
+      line-height: 1.6;
+      font-size: 1.05rem;
+    }
+
+    *, input, button, select, textarea {
+      font-family: 'Lexend', sans-serif;
+    }
+
+    code, pre, .font-mono, [class*="font-mono"] {
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    .font-lexend,
+    [class*="font-['Lexend']"],
+    [class*="font-['Patrick_Hand']"],
+    [class*="font-['Caveat']"],
+    [class*="font-['Architects_Daughter']"] {
+      font-family: 'Lexend', sans-serif !important;
+    }
+
+    /* Coffee Stain Ring Visual */
+    .coffee-stain {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 6px solid rgba(139, 90, 43, 0.12);
+      box-shadow: inset 0 0 12px rgba(139, 90, 43, 0.15);
+      pointer-events: none;
+      filter: blur(1px);
+    }
+    .coffee-stain::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      border: 3px solid rgba(139, 90, 43, 0.08);
+    }
+
+    /* Spiral Binding Effect */
+    .spiral-binding {
+      background-image: radial-gradient(#333 35%, transparent 40%);
+      background-size: 24px 24px;
+      background-position: 0 0;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--paper-note);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 5px;
+      border: 2px solid var(--paper-note);
+    }
+  </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden flex flex-col justify-between">
+
+  <!-- Left Side Spiral Holes (Desktop Only Visual) -->
+  <div class="hidden lg:block fixed left-2 top-0 bottom-0 w-8 z-40 pointer-events-none flex flex-col justify-around py-4">
+    <div class="w-5 h-5 rounded-full border-2 border-gray-700 bg-gray-900 shadow-inner my-2"></div>
+    <div class="w-5 h-5 rounded-full border-2 border-gray-700 bg-gray-900 shadow-inner my-2"></div>
+    <div class="w-5 h-5 rounded-full border-2 border-gray-700 bg-gray-900 shadow-inner my-2"></div>
+    <div class="w-5 h-5 rounded-full border-2 border-gray-700 bg-gray-900 shadow-inner my-2"></div>
+    <div class="w-5 h-5 rounded-full border-2 border-gray-700 bg-gray-900 shadow-inner my-2"></div>
+    <div class="w-5 h-5 rounded-full border-2 border-gray-700 bg-gray-900 shadow-inner my-2"></div>
+    <div class="w-5 h-5 rounded-full border-2 border-gray-700 bg-gray-900 shadow-inner my-2"></div>
+    <div class="w-5 h-5 rounded-full border-2 border-gray-700 bg-gray-900 shadow-inner my-2"></div>
+  </div>
+
+  <!-- NAVBAR -->
+  <header class="sticky top-0 z-50 bg-[#F4F1EA]/90 backdrop-blur-md border-b-2 border-[#0E2A5C]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+      
+      <!-- Logo -->
+      <a href="/system_design" class="flex items-center gap-2 group">
+        <div class="relative bg-[#FFFFA5] px-3 py-1 sketch-border -rotate-2 group-hover:rotate-0 transition-transform">
+          <span class="font-bold text-xl text-[#0E2A5C] tracking-tight">System Design First Principles</span>
+          <span class="absolute -bottom-2 -right-2 bg-[#D12828] text-white text-[10px] font-bold px-1.5 py-0.2 sketch-border rotate-6">FastAPI</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav class="hidden md:flex items-center gap-6 text-lg font-medium">
+        <a href="/" class="hover:text-[#D12828] hover:underline decoration-wavy decoration-[#D12828] transition-all flex items-center gap-1 font-bold">
+          <span>← Backend Hub</span>
+        </a>
+        <a href="#simulator" class="hover:text-[#D12828] hover:underline decoration-wavy decoration-[#D12828] transition-all">URL Simulator</a>
+        <a href="#calculator" class="hover:text-[#D12828] hover:underline decoration-wavy decoration-[#D12828] transition-all">Capacity Estimator</a>
+      </nav>
+
+      <!-- CTA -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="md:hidden bg-[#FFFFA5] text-[#0E2A5C] px-2.5 py-1.5 sketch-border font-bold text-xs">← Backend</a>
+        <a href="#curriculum" class="bg-[#D12828] text-white px-5 py-2.5 sketch-border sketch-shadow hover:bg-[#0E2A5C] transition-all transform hover:-translate-y-0.5 active:translate-y-0 font-bold flex items-center gap-2 cursor-pointer text-lg">
+          <svg class="w-5 h-5 stroke-current fill-none stroke-2" viewBox="0 0 24 24">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          Explore Curriculum
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO SECTION (BROAD SYSTEM DESIGN PERSPECTIVE) -->
+    <section id="hero" class="relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
+      <!-- Background Doodles -->
+      <div class="absolute top-10 right-10 opacity-20 pointer-events-none hidden lg:block">
+        <svg class="w-56 h-56 stroke-[#0E2A5C] fill-none stroke-[1.5]" viewBox="0 0 120 120">
+          <rect x="10" y="10" width="30" height="20" rx="3" stroke-dasharray="3 3"/>
+          <rect x="70" y="10" width="30" height="20" rx="3" stroke-dasharray="3 3"/>
+          <rect x="40" y="70" width="40" height="30" rx="4"/>
+          <line x1="25" y1="30" x2="60" y2="70"/>
+          <line x1="85" y1="30" x2="60" y2="70"/>
+        </svg>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <!-- Left Column: Copy & CTAs -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- Badge -->
+          <div class="inline-flex items-center gap-2 bg-[#FFFFA5] text-[#0E2A5C] px-3 py-1 sketch-border -rotate-1 text-sm font-bold">
+            <svg class="w-4 h-4 stroke-[#D12828] fill-none stroke-2" viewBox="0 0 24 24">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            Distributed Architecture • High Scalability • Systems First Principles
+          </div>
+
+          <!-- Main Title -->
+          <h1 class="text-4xl sm:text-6xl font-extrabold text-[#0E2A5C] tracking-tight leading-tight">
+            Stop Memorizing Topologies. <br>
+            <span class="highlighter inline-block mt-1 transform -rotate-1">Architect Distributed Systems</span> <br>
+            From First Principles.
+          </h1>
+
+          <!-- Subtitle -->
+          <p class="text-xl sm:text-2xl text-[#333333] max-w-2xl font-normal leading-relaxed">
+            A hand-sketched interactive guide to scaling web applications: latency numbers every engineer should know, CAP theorem, consistent hashing, distributed caching, database sharding, message queues, and end-to-end case studies.
+          </p>
+
+          <!-- Metric Highlights (Broad System Design) -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+            <div class="bg-white p-3 sketch-border text-center transform -rotate-1">
+              <div class="text-2xl font-black text-[#D12828] font-mono">10M+</div>
+              <div class="text-xs font-bold text-[#0E2A5C] uppercase">Concurrent Scale</div>
+            </div>
+            <div class="bg-white p-3 sketch-border text-center transform rotate-1">
+              <div class="text-2xl font-black text-[#0E2A5C] font-mono">&lt; 20ms</div>
+              <div class="text-xs font-bold text-[#0E2A5C] uppercase">Global SLA</div>
+            </div>
+            <div class="bg-white p-3 sketch-border text-center transform -rotate-0.5">
+              <div class="text-2xl font-black text-[#0000FF] font-mono">99.999%</div>
+              <div class="text-xs font-bold text-[#0E2A5C] uppercase">High Availability</div>
+            </div>
+            <div class="bg-white p-3 sketch-border text-center transform rotate-1.5">
+              <div class="text-2xl font-black text-green-700 font-mono">CH 01</div>
+              <div class="text-xs font-bold text-[#0E2A5C] uppercase">URL Shortener Ready</div>
+            </div>
+          </div>
+
+          <!-- CTA Buttons -->
+          <div class="flex flex-wrap items-center gap-4 pt-2">
+            <a href="#curriculum" class="bg-[#0E2A5C] text-white px-6 py-3.5 sketch-border sketch-shadow hover:bg-[#D12828] transition-all transform hover:-translate-y-0.5 font-bold flex items-center gap-2 cursor-pointer text-lg">
+              <span>Explore Curriculum (12 Topics) →</span>
+            </a>
+            <a href="#simulator" class="bg-[#FFFFA5] text-[#0E2A5C] px-5 py-3.5 sketch-border hover:bg-yellow-200 transition-all font-bold flex items-center gap-2 cursor-pointer text-lg">
+              <svg class="w-5 h-5 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>CH 01 Live Simulator</span>
+            </a>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Master Distributed System Architecture Diagram -->
+        <div class="lg:col-span-5">
+          <div class="bg-white p-6 sketch-border-thick sketch-shadow-lg relative transform rotate-1 hover:rotate-0 transition-transform">
+            <div class="tape-top"></div>
+            <div class="coffee-stain -top-8 -left-8"></div>
+
+            <div class="flex items-center justify-between pb-3 mb-4 border-b-2 border-dashed border-[#0E2A5C]">
+              <span class="text-sm font-bold text-[#D12828] uppercase tracking-wider font-mono">DISTRIBUTED SYSTEM TOPOLOGY</span>
+              <span class="bg-[#FFFFA5] text-[#0E2A5C] text-xs font-bold px-2 py-0.5 sketch-border font-mono">TIER MAP</span>
+            </div>
+
+            <div class="space-y-2.5 font-mono text-xs">
+              <!-- Tier 1: Client Layer -->
+              <div class="bg-[#F4F1EA] p-2 sketch-border flex items-center justify-between">
+                <div>
+                  <span class="font-bold text-[#0E2A5C]">1. Client Tier</span>
+                  <div class="text-[10px] text-[#555]">Browsers, iOS, Android, IoT APIs</div>
+                </div>
+                <span class="bg-[#FFFFA5] text-[#0E2A5C] font-bold px-1.5 py-0.5 sketch-border text-[9px]">TLS 1.3 / HTTP/3</span>
+              </div>
+
+              <div class="text-center text-[#D12828] font-bold text-[10px]">▼ Global Anycast &amp; Edge</div>
+
+              <!-- Tier 2: DNS & CDN -->
+              <div class="bg-[#F4F1EA] p-2 sketch-border flex items-center justify-between">
+                <div>
+                  <span class="font-bold text-[#0E2A5C]">2. Edge DNS &amp; CDN Points of Presence</span>
+                  <div class="text-[10px] text-[#555]">Route53 GeoDNS, Cloudflare Edge Cache</div>
+                </div>
+                <span class="bg-[#0000FF] text-white font-bold px-1.5 py-0.5 sketch-border text-[9px]">Static Asset SLA</span>
+              </div>
+
+              <div class="text-center text-[#D12828] font-bold text-[10px]">▼ Dynamic Request Ingress</div>
+
+              <!-- Tier 3: Load Balancer & API Gateway -->
+              <div class="bg-[#F4F1EA] p-2 sketch-border flex items-center justify-between">
+                <div>
+                  <span class="font-bold text-[#0E2A5C]">3. API Gateway &amp; Reverse Proxies</span>
+                  <div class="text-[10px] text-[#555]">Envoy / Nginx, Rate Limiting, JWT Auth</div>
+                </div>
+                <span class="bg-[#0E2A5C] text-white font-bold px-1.5 py-0.5 sketch-border text-[9px]">L4 / L7 Traffic</span>
+              </div>
+
+              <div class="text-center text-[#D12828] font-bold text-[10px]">▼ Dispatched to Stateless Clusters</div>
+
+              <!-- Tier 4 & 5: App Servers & Caching -->
+              <div class="grid grid-cols-2 gap-2">
+                <div class="bg-[#FFFFA5] p-2 sketch-border">
+                  <div class="font-bold text-[#0E2A5C] text-[11px]">4. App Microservices</div>
+                  <div class="text-[10px] text-[#555]">Auto-scaled stateless pods</div>
+                  <div class="text-[9px] text-[#0E2A5C] font-bold mt-0.5">Horizontal Scale</div>
+                </div>
+                <div class="bg-[#FFFFA5] p-2 sketch-border">
+                  <div class="font-bold text-[#D12828] text-[11px]">5. Distributed Cache</div>
+                  <div class="text-[10px] text-[#555]">Redis Cluster / Consistent Hash</div>
+                  <div class="text-[9px] text-green-700 font-bold mt-0.5">Sub-2ms Lookup</div>
+                </div>
+              </div>
+
+              <div class="text-center text-[#D12828] font-bold text-[10px]">▼ Write Path &amp; Persistence</div>
+
+              <!-- Tier 6 & 7: Storage & Event Bus -->
+              <div class="grid grid-cols-2 gap-2">
+                <div class="bg-[#F4F1EA] p-2 sketch-border">
+                  <div class="font-bold text-[#0E2A5C] text-[11px]">6. Sharded DB Tier</div>
+                  <div class="text-[10px] text-[#555]">RDBMS / NoSQL + S3</div>
+                </div>
+                <div class="bg-[#F4F1EA] p-2 sketch-border">
+                  <div class="font-bold text-[#0000FF] text-[11px]">7. Async Event Bus</div>
+                  <div class="text-[10px] text-[#555]">Kafka Partitions &amp; Workers</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SYSTEM DESIGN PILLARS (NAPKIN CHEAT SHEET) -->
+    <section class="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t-2 border-dashed border-[#0E2A5C]">
+      
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+        <div>
+          <h2 class="text-2xl sm:text-4xl font-extrabold text-[#0E2A5C]">
+            Core Distributed Systems Pillars
+          </h2>
+          <p class="text-base text-gray-700">The foundational building blocks required to design any large-scale system.</p>
+        </div>
+        <div class="bg-[#FFFFA5] text-[#0E2A5C] px-3 py-1 sketch-border text-xs font-bold font-mono">
+          4 ARCHITECTURAL PILLARS
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        
+        <!-- Pillar 1 -->
+        <div class="bg-white p-5 sketch-border sketch-shadow transform -rotate-1 hover:rotate-0 transition-transform">
+          <div class="text-[#D12828] font-mono text-xs font-bold uppercase mb-1">PILLAR 01</div>
+          <h3 class="text-lg font-bold text-[#0E2A5C] mb-2">Scaling &amp; Gateways</h3>
+          <p class="text-xs text-gray-700 leading-relaxed mb-3">
+            Vertical vs horizontal scaling, stateless architectures, Layer 4 (TCP) vs Layer 7 (HTTP) load balancing, round-robin, and consistent hashing rings.
+          </p>
+          <div class="text-[11px] font-mono text-[#D12828] font-bold">Key: Zero Single Point of Failure</div>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="bg-white p-5 sketch-border sketch-shadow transform rotate-1 hover:rotate-0 transition-transform">
+          <div class="text-[#0E2A5C] font-mono text-xs font-bold uppercase mb-1">PILLAR 02</div>
+          <h3 class="text-lg font-bold text-[#0E2A5C] mb-2">Caching &amp; Memory</h3>
+          <p class="text-xs text-gray-700 leading-relaxed mb-3">
+            In-memory caching tiers (Redis/Memcached), Cache-Aside, Write-Through, Write-Behind, eviction policies (LRU, LFU), and cache stampede mitigation.
+          </p>
+          <div class="text-[11px] font-mono text-green-700 font-bold">Key: 80/20 Pareto Memory Sizing</div>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="bg-white p-5 sketch-border sketch-shadow transform -rotate-0.5 hover:rotate-0 transition-transform">
+          <div class="text-[#0000FF] font-mono text-xs font-bold uppercase mb-1">PILLAR 03</div>
+          <h3 class="text-lg font-bold text-[#0E2A5C] mb-2">Database Sharding</h3>
+          <p class="text-xs text-gray-700 leading-relaxed mb-3">
+            Horizontal partitioning, Hash-based vs Range-based shard keys, master-replica replication, read replicas, and handling cross-shard queries.
+          </p>
+          <div class="text-[11px] font-mono text-[#0000FF] font-bold">Key: Consistent Hash Distribution</div>
+        </div>
+
+        <!-- Pillar 4 -->
+        <div class="bg-white p-5 sketch-border sketch-shadow transform rotate-1 hover:rotate-0 transition-transform">
+          <div class="text-green-800 font-mono text-xs font-bold uppercase mb-1">PILLAR 04</div>
+          <h3 class="text-lg font-bold text-[#0E2A5C] mb-2">Async &amp; Message Queues</h3>
+          <p class="text-xs text-gray-700 leading-relaxed mb-3">
+            Decoupling heavy workloads with distributed event streaming (Kafka/RabbitMQ), consumer groups, backpressure, idempotency, and dead-letter queues.
+          </p>
+          <div class="text-[11px] font-mono text-purple-800 font-bold">Key: At-Least-Once + Idempotency</div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- CURRICULUM SECTION (ALL TOPICS + ACTIVE URL SHORTENER) -->
+    <section id="curriculum" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t-2 border-dashed border-[#0E2A5C] relative">
+      
+      <!-- Section Title -->
+      <div class="text-center space-y-3 mb-10">
+        <div class="inline-block bg-[#FFFFA5] text-[#0E2A5C] px-3 py-1 sketch-border rotate-1 text-sm font-bold">
+          System Architecture Curriculum
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-[#0E2A5C]">
+          System Design Topics &amp; Case Studies
+        </h2>
+        <p class="text-xl text-[#333333] max-w-3xl mx-auto">
+          Comprehensive curriculum from core distributed building blocks to production case studies. Chapter 01 (URL Shortener) is active and complete below.
+        </p>
+      </div>
+
+      <!-- Controls: Search & Filters -->
+      <div class="bg-white p-6 sketch-border sketch-shadow-lg mb-10 space-y-4 -rotate-0.5">
+        <div class="flex flex-col md:flex-row items-center gap-4">
+          
+          <!-- Search Bar -->
+          <div class="relative w-full md:w-1/2">
+            <svg class="w-6 h-6 absolute left-3 top-1/2 -translate-y-1/2 stroke-[#0E2A5C] fill-none stroke-2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="curriculumSearch" placeholder="Search topics (e.g. URL Shortener, Consistent Hashing, Sharding, Kafka)..." 
+                   class="w-full bg-[#F4F1EA] pl-11 pr-4 py-2.5 sketch-border text-lg text-[#0E2A5C] focus:outline-none focus:bg-[#FFFFA5] transition-colors font-['Lexend']">
+          </div>
+
+          <!-- Category Filter Tabs -->
+          <div class="flex flex-wrap items-center gap-2 w-full md:w-1/2 justify-start md:justify-end">
+            <button onclick="filterCategory('all')" class="cat-btn active bg-[#0E2A5C] text-white px-3 py-1.5 sketch-border text-sm font-bold transition-all cursor-pointer" data-cat="all">All (12)</button>
+            <button onclick="filterCategory('case_study')" class="cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer" data-cat="case_study">Case Studies (5)</button>
+            <button onclick="filterCategory('fundamentals')" class="cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer" data-cat="fundamentals">Scale Fundamentals (1)</button>
+            <button onclick="filterCategory('caching')" class="cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer" data-cat="caching">Caching &amp; Rings (1)</button>
+            <button onclick="filterCategory('data')" class="cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer" data-cat="data">Storage &amp; Shards (2)</button>
+            <button onclick="filterCategory('system')" class="cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer" data-cat="system">Messaging &amp; Systems (3)</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Chapter Cards Grid -->
+      <div id="chaptersContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered via JavaScript below -->
+      </div>
+
+    </section>
+
+    <!-- INTERACTIVE SIMULATOR SECTION (ACTIVE CASE STUDY: URL SHORTENER) -->
+    <section id="simulator" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t-2 border-dashed border-[#0E2A5C] relative">
+      <div class="text-center space-y-3 mb-10">
+        <div class="inline-block bg-[#FFFFA5] text-[#0E2A5C] px-3 py-1 sketch-border -rotate-1 text-sm font-bold">
+          Active Case Study Lab (CH 01)
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-[#0E2A5C]">
+          Live URL Shortener &amp; Redirect Simulator
+        </h2>
+        <p class="text-xl text-[#333333] max-w-3xl mx-auto">
+          Test real-time Base62 generation, inspect simulated cache lookups, and experience HTTP 301 vs 302 redirect mechanics step-by-step.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left Column: URL Generator Form -->
+        <div class="lg:col-span-6 bg-white p-6 sm:p-8 sketch-border-thick sketch-shadow-lg relative">
+          <div class="tape-top"></div>
+          
+          <h3 class="text-2xl font-bold text-[#0E2A5C] mb-4 flex items-center gap-2">
+            <svg class="w-6 h-6 stroke-[#D12828] fill-none stroke-2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span>Generate &amp; Encode Short Link</span>
+          </h3>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-bold text-[#0E2A5C] mb-1">Original Long URL:</label>
+              <input type="url" id="longUrlInput" value="https://engineering.firstprinciples.dev/system-design/distributed-caching-and-lru-eviction-deepdive" 
+                     class="w-full bg-[#F4F1EA] p-3 sketch-border text-sm text-[#0E2A5C] font-mono focus:bg-[#FFFFA5] focus:outline-none transition-colors">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-bold text-[#0E2A5C] mb-1">Encoding Algorithm:</label>
+                <select id="algoSelect" class="w-full bg-[#F4F1EA] p-2.5 sketch-border text-sm text-[#0E2A5C] font-mono focus:bg-[#FFFFA5] focus:outline-none">
+                  <option value="base62">Base62 + 64-bit ID (Recommended)</option>
+                  <option value="kgs">Key Generation Service (KGS Pre-allocated)</option>
+                  <option value="md5">MD5 Hash First 7 Chars (Requires Collision Check)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-bold text-[#0E2A5C] mb-1">Redirect HTTP Status:</label>
+                <select id="redirectTypeSelect" class="w-full bg-[#F4F1EA] p-2.5 sketch-border text-sm text-[#0E2A5C] font-mono focus:bg-[#FFFFA5] focus:outline-none">
+                  <option value="301">301 Moved Permanently (Browser Cached)</option>
+                  <option value="302">302 Found / Temporary (Full Analytics)</option>
+                </select>
+              </div>
+            </div>
+
+            <button onclick="runUrlShortenSimulation()" class="w-full bg-[#D12828] text-white p-3.5 sketch-border sketch-shadow hover:bg-[#0E2A5C] transition-all font-bold text-lg cursor-pointer">
+              Execute Shortening Pipeline →
+            </button>
+          </div>
+
+          <!-- Step Trace Box -->
+          <div id="simulationTrace" class="mt-6 p-4 bg-[#F4F1EA] sketch-border font-mono text-xs space-y-2">
+            <div class="text-[#0E2A5C] font-bold text-sm mb-2 border-b border-dashed border-[#0E2A5C] pb-1">
+              SYSTEM EXECUTION TRACE:
+            </div>
+            <div class="text-gray-600">Enter a URL above and click execute to observe the architectural pipeline.</div>
+          </div>
+
+          <!-- Output Box -->
+          <div id="resultBox" class="mt-4 p-4 bg-[#FFFFA5] sketch-border hidden">
+            <div class="text-xs font-bold text-[#0E2A5C] uppercase mb-1">Generated Short Link:</div>
+            <div class="flex items-center justify-between gap-2">
+              <span id="shortResultUrl" class="text-lg font-bold text-[#D12828] font-mono">https://tiny.notes/b9X7qL</span>
+              <button onclick="testBrowserRedirect()" class="bg-[#0E2A5C] text-white px-3 py-1.5 sketch-border text-xs font-bold hover:bg-[#D12828] transition-colors cursor-pointer">
+                Simulate Browser Visit →
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Redirect & Wire Inspection -->
+        <div class="lg:col-span-6 bg-white p-6 sm:p-8 sketch-border-thick sketch-shadow-lg relative">
+          <div class="tape-top"></div>
+          
+          <h3 class="text-2xl font-bold text-[#0E2A5C] mb-4 flex items-center gap-2">
+            <svg class="w-6 h-6 stroke-[#0E2A5C] fill-none stroke-2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span>Wire Inspection &amp; Cache Telemetry</span>
+          </h3>
+
+          <div id="browserSimulationOutput" class="space-y-4">
+            <!-- Default Placeholder -->
+            <div class="bg-[#F4F1EA] p-4 sketch-border font-mono text-xs space-y-2">
+              <div class="text-xs font-bold text-[#0E2A5C] mb-1">HTTP REDIRECT RESPONSE INSPECTOR:</div>
+              <p class="text-gray-600">
+                Click "Simulate Browser Visit" on the left to inspect raw wire headers, cache latency, and how browsers handle 301 vs 302 responses.
+              </p>
+            </div>
+
+            <!-- Comparison Matrix -->
+            <div class="bg-[#FFFFA5] p-4 sketch-border text-xs space-y-2">
+              <div class="font-bold text-[#0E2A5C] text-sm mb-1">Redirect Decision Matrix:</div>
+              <div class="grid grid-cols-2 gap-2 text-[11px]">
+                <div class="bg-white p-2.5 sketch-border">
+                  <div class="font-bold text-[#D12828]">301 Moved Permanently</div>
+                  <div class="text-gray-700 mt-1">• Cached in browser memory.</div>
+                  <div class="text-gray-700">• Bypasses server on re-visit.</div>
+                  <div class="text-green-700 font-bold mt-1">✓ Lowest server load &amp; latency.</div>
+                  <div class="text-red-700 font-bold">✗ Cannot track repeat clicks.</div>
+                </div>
+                <div class="bg-white p-2.5 sketch-border">
+                  <div class="font-bold text-[#0E2A5C]">302 Found (Temporary)</div>
+                  <div class="text-gray-700 mt-1">• Never cached by browser.</div>
+                  <div class="text-gray-700">• Hits backend on every click.</div>
+                  <div class="text-green-700 font-bold mt-1">✓ 100% accurate click analytics.</div>
+                  <div class="text-red-700 font-bold">✗ Slightly higher server QPS.</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- CAPACITY ESTIMATOR CALCULATOR -->
+    <section id="calculator" class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t-2 border-dashed border-[#0E2A5C] relative">
+      <div class="text-center space-y-3 mb-10">
+        <div class="inline-block bg-[#FFFFA5] text-[#0E2A5C] px-3 py-1 sketch-border rotate-1 text-sm font-bold">
+          Universal Back-of-the-Envelope Tool
+        </div>
+        <h2 class="text-3xl sm:text-5xl font-extrabold text-[#0E2A5C]">
+          System Scale &amp; Capacity Calculator
+        </h2>
+        <p class="text-xl text-[#333333]">
+          Adjust production traffic assumptions to calculate write/read QPS, memory requirements for Redis, and 5-year database storage.
+        </p>
+      </div>
+
+      <div class="bg-white p-6 sm:p-10 sketch-border-thick sketch-shadow-lg relative">
+        <div class="tape-top"></div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          <!-- Inputs Column -->
+          <div class="lg:col-span-5 space-y-5">
+            <div>
+              <div class="flex justify-between items-center text-sm font-bold text-[#0E2A5C] mb-1">
+                <span>New Records / Writes per Month:</span>
+                <span id="urlsPerMonthLabel" class="font-mono text-[#D12828] text-base">100 Million</span>
+              </div>
+              <input type="range" id="urlsPerMonthSlider" min="10" max="500" step="10" value="100" oninput="calculateCapacity()" 
+                     class="w-full accent-[#D12828] cursor-pointer">
+              <div class="flex justify-between text-[10px] text-gray-500 font-mono">
+                <span>10M / mo</span>
+                <span>250M / mo</span>
+                <span>500M / mo</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center text-sm font-bold text-[#0E2A5C] mb-1">
+                <span>Read to Write Traffic Ratio:</span>
+                <span id="readRatioLabel" class="font-mono text-[#0E2A5C] text-base">100 : 1</span>
+              </div>
+              <input type="range" id="readRatioSlider" min="10" max="200" step="10" value="100" oninput="calculateCapacity()" 
+                     class="w-full accent-[#0E2A5C] cursor-pointer">
+              <div class="flex justify-between text-[10px] text-gray-500 font-mono">
+                <span>10 : 1</span>
+                <span>100 : 1</span>
+                <span>200 : 1</span>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center text-sm font-bold text-[#0E2A5C] mb-1">
+                <span>Data Retention Duration:</span>
+                <span id="retentionLabel" class="font-mono text-[#0000FF] text-base">5 Years</span>
+              </div>
+              <input type="range" id="retentionSlider" min="1" max="10" step="1" value="5" oninput="calculateCapacity()" 
+                     class="w-full accent-[#0000FF] cursor-pointer">
+              <div class="flex justify-between text-[10px] text-gray-500 font-mono">
+                <span>1 Year</span>
+                <span>5 Years</span>
+                <span>10 Years</span>
+              </div>
+            </div>
+
+            <div class="bg-[#F4F1EA] p-3 sketch-border text-xs text-gray-700 font-mono">
+              <strong>Fixed Constants:</strong> Average row size = 500 bytes (ID, metadata, timestamps). Redis Cache follows 80/20 Pareto rule (caches 20% hot daily read traffic).
+            </div>
+          </div>
+
+          <!-- Calculated Output Column (Sketch Cards) -->
+          <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+            <!-- Output 1: QPS -->
+            <div class="bg-[#FFFFA5] p-5 sketch-border text-center transform -rotate-1">
+              <div class="text-xs font-bold text-[#0E2A5C] uppercase tracking-wider mb-1">Write / Ingestion QPS</div>
+              <div id="writeQpsOutput" class="text-3xl font-black text-[#D12828] font-mono">~38 writes/sec</div>
+              <div id="peakWriteQpsOutput" class="text-xs text-gray-700 font-mono mt-1">Peak (2x): ~76 writes/sec</div>
+            </div>
+
+            <!-- Output 2: Read QPS -->
+            <div class="bg-white p-5 sketch-border text-center transform rotate-1">
+              <div class="text-xs font-bold text-[#0E2A5C] uppercase tracking-wider mb-1">Read / Query QPS</div>
+              <div id="readQpsOutput" class="text-3xl font-black text-[#0E2A5C] font-mono">~3,858 reads/sec</div>
+              <div id="peakReadQpsOutput" class="text-xs text-gray-700 font-mono mt-1">Peak (2x): ~7,716 reads/sec</div>
+            </div>
+
+            <!-- Output 3: Storage -->
+            <div class="bg-white p-5 sketch-border text-center transform rotate-1">
+              <div class="text-xs font-bold text-[#0E2A5C] uppercase tracking-wider mb-1">Total Storage (5 Years)</div>
+              <div id="storageOutput" class="text-3xl font-black text-[#0000FF] font-mono">~3.0 TB</div>
+              <div id="totalUrlsOutput" class="text-xs text-gray-700 font-mono mt-1">Across 6.0 Billion rows</div>
+            </div>
+
+            <!-- Output 4: Redis RAM -->
+            <div class="bg-[#FFFFA5] p-5 sketch-border text-center transform -rotate-1">
+              <div class="text-xs font-bold text-[#0E2A5C] uppercase tracking-wider mb-1">Redis In-Memory RAM (80/20)</div>
+              <div id="redisRamOutput" class="text-3xl font-black text-green-800 font-mono">~6.6 GB</div>
+              <div class="text-xs text-gray-700 font-mono mt-1">20% daily read traffic cached</div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FINAL CTA SECTION -->
+    <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      <div class="bg-[#FFFFA5] p-8 sm:p-12 sketch-border-thick sketch-shadow-lg text-center relative rotate-1">
+        <div class="space-y-4">
+          <h2 class="text-3xl sm:text-5xl font-extrabold text-[#0E2A5C]">
+            Ready to Master Large-Scale System Design?
+          </h2>
+          <p class="text-xl text-[#333] max-w-2xl mx-auto">
+            Explore Chapter 01 (URL Shortener) notes and test live interactive capacity estimations today.
+          </p>
+          <div class="pt-4 flex flex-wrap justify-center gap-4">
+            <button onclick="openUrlShortenerNotesModal()" class="inline-block bg-[#D12828] text-white text-2xl px-8 py-4 sketch-border sketch-shadow-lg hover:bg-[#0E2A5C] transition-all font-bold cursor-pointer">
+              Read CH 01: URL Shortener →
+            </button>
+            <a href="/" class="inline-block bg-white text-[#0E2A5C] text-2xl px-8 py-4 sketch-border sketch-shadow-lg hover:bg-yellow-200 transition-all font-bold cursor-pointer">
+              ← Return to Backend Hub
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-[#0E2A5C] text-[#F4F1EA] border-t-4 border-[#333] pt-12 pb-8 px-4 sm:px-6 lg:px-8 relative">
+    <!-- Top Spiral Binding Border Visual -->
+    <div class="absolute -top-3 left-0 right-0 h-6 spiral-binding opacity-60"></div>
+
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-sm">
+      
+      <!-- Col 1: About -->
+      <div class="space-y-3">
+        <div class="font-bold text-xl text-[#FFFFA5] font-['Lexend'] text-2xl">System Design First Principles</div>
+        <p class="text-gray-300 leading-relaxed">
+          Hand-crafted visual architectural blueprints dedicated to demystifying large-scale distributed systems through sketch-note diagrams. Powered by FastAPI.
+        </p>
+      </div>
+
+      <!-- Col 2: Topics -->
+      <div>
+        <div class="font-bold text-lg text-[#FFFFA5] mb-3">Active Case Study</div>
+        <ul class="space-y-2 text-gray-300">
+          <li><a href="#curriculum" class="hover:text-[#FFFFA5]">CH 01: URL Shortener (TinyURL)</a></li>
+          <li><a href="#simulator" class="hover:text-[#FFFFA5]">Live Base62 &amp; Redirect Simulator</a></li>
+          <li><a href="#calculator" class="hover:text-[#FFFFA5]">Scale &amp; Capacity Calculator</a></li>
+          <li><a href="#curriculum" class="hover:text-[#FFFFA5]">12-Topic Distributed Curriculum</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 3: Navigation -->
+      <div>
+        <div class="font-bold text-lg text-[#FFFFA5] mb-3">Navigation</div>
+        <ul class="space-y-2 text-gray-300">
+          <li><a href="/" class="hover:text-[#FFFFA5] text-[#FFFFA5] font-bold">← Backend Curriculum Hub</a></li>
+          <li><a href="/what_is_backend" class="hover:text-[#FFFFA5]">Chapter 01: What is a Backend</a></li>
+          <li><a href="/rest_api" class="hover:text-[#FFFFA5]">REST API Masterclass</a></li>
+          <li><a href="/docs" class="hover:text-[#FFFFA5]">FastAPI OpenAPI Specs</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Social SVG Sketch Icons -->
+      <div>
+        <div class="font-bold text-lg text-[#FFFFA5] mb-3">Connect</div>
+        <div class="flex items-center gap-4">
+          <!-- Github -->
+          <a href="#" class="p-2 border border-gray-500 rounded hover:bg-[#FFFFA5] hover:text-[#0E2A5C] transition-colors" title="GitHub">
+            <svg class="w-6 h-6 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          </a>
+          <!-- Twitter -->
+          <a href="#" class="p-2 border border-gray-500 rounded hover:bg-[#FFFFA5] hover:text-[#0E2A5C] transition-colors" title="Twitter">
+            <svg class="w-6 h-6 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg>
+          </a>
+          <!-- YouTube -->
+          <a href="https://youtube.com/playlist?list=PLui3EUkuMTPgZcV0QhQrOcwMPcBCcd_Q1&si=2rctmwtew8ThcJnU" target="_blank" class="p-2 border border-gray-500 rounded hover:bg-[#FFFFA5] hover:text-[#0E2A5C] transition-colors" title="YouTube Playlist">
+            <svg class="w-6 h-6 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="max-w-7xl mx-auto pt-6 border-t border-gray-700 text-center text-xs text-gray-400">
+      © 2026 System Design From First Principles. All hand-drawn sketch notes reserved. Built with FastAPI.
+    </div>
+  </footer>
+
+  <!-- MODAL: URL SHORTENER ARCHITECTURE BLUEPRINT -->
+  <div id="notesModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-[#F4F1EA] sketch-border-thick sketch-shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative">
+      
+      <!-- Close Button -->
+      <button onclick="closeModal('notesModal')" class="absolute top-4 right-4 bg-[#D12828] text-white p-1.5 sketch-border hover:bg-[#0E2A5C] transition-colors cursor-pointer">
+        <svg class="w-5 h-5 stroke-current fill-none stroke-2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <div class="flex items-center gap-2 mb-2">
+        <span class="bg-[#FFFFA5] text-[#0E2A5C] font-bold px-2 py-0.5 sketch-border text-xs font-mono">CH 01</span>
+        <span class="text-xs font-bold text-[#D12828] uppercase tracking-wider font-mono">DISTRIBUTED ARCHITECTURE BLUEPRINT</span>
+      </div>
+
+      <h3 class="text-3xl font-extrabold text-[#0E2A5C] mb-4">Design a URL Shortener (TinyURL / Bitly)</h3>
+
+      <div class="space-y-5 text-sm text-[#333]">
+        
+        <div class="bg-white p-4 sketch-border">
+          <div class="font-bold text-[#0E2A5C] text-base mb-1">Executive Summary:</div>
+          <p>
+            A URL shortener is a classic read-heavy distributed service designed to convert arbitrary long URLs into compact 7-character aliases (e.g. <code>https://tiny.notes/b9X7qL</code>). The service operates under high availability (99.99%), sub-20 millisecond redirect SLA, and handles asymmetric traffic (100:1 read-to-write ratio) using multi-tier Redis caching, Base62 encoding, and a dedicated Key Generation Service (KGS).
+          </p>
+        </div>
+
+        <div class="bg-[#FFFFA5] p-4 sketch-border">
+          <div class="font-bold text-[#0E2A5C] text-base mb-2">Key Engineering Takeaways:</div>
+          <ul class="list-disc pl-5 space-y-2">
+            <li>
+              <strong>Base62 Encoding vs Hash Truncation:</strong> 62 alphanumeric characters (<code>[0-9a-zA-Z]</code>) raised to length 7 provides <code>62^7 ≈ 3.52 Trillion</code> unique short URLs. Truncating MD5 hashes causes severe collision rates, whereas converting unique 64-bit integer IDs or fetching from KGS has 0% collision probability.
+            </li>
+            <li>
+              <strong>HTTP 301 vs 302 Redirect Semantics:</strong>
+              HTTP 301 (Moved Permanently) instructs the browser to cache the target URL locally, eliminating subsequent server round-trips but breaking real-time click telemetry. HTTP 302 (Found) forces the browser to consult the backend on every click, enabling analytics tracking at the expense of higher QPS.
+            </li>
+            <li>
+              <strong>80-20 Pareto In-Memory Caching:</strong>
+              With a 100:1 read ratio, caching 20% of daily hot links in an in-memory Redis cluster absorbs 80% of read volume, keeping relational/NoSQL database queries to a minimum.
+            </li>
+            <li>
+              <strong>Database Sharding &amp; Hot Spot Prevention:</strong>
+              Using <code>Hash(short_code) % N</code> (Consistent Hashing) spreads URL rows uniformly across shards, avoiding hot partitions created by user-based or range-based sharding.
+            </li>
+          </ul>
+        </div>
+
+        <div class="bg-white p-4 sketch-border font-mono text-xs space-y-2">
+          <div class="font-bold text-[#0E2A5C] text-sm">INTERVIEW ARCHITECTURAL CHECKLIST:</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div class="p-2 bg-[#F4F1EA] sketch-border">
+              <strong>1. Step 1: Clarify Scope</strong><br>
+              Traffic volume, read/write ratio, custom aliases, link expiration.
+            </div>
+            <div class="p-2 bg-[#F4F1EA] sketch-border">
+              <strong>2. Step 2: Capacity Estimation</strong><br>
+              Calculate Write QPS, Read QPS, 5-year storage, and Redis RAM.
+            </div>
+            <div class="p-2 bg-[#F4F1EA] sketch-border">
+              <strong>3. Step 3: API Design</strong><br>
+              <code>POST /api/v1/urls</code> and <code>GET /{short_code}</code>.
+            </div>
+            <div class="p-2 bg-[#F4F1EA] sketch-border">
+              <strong>4. Step 4: Data Model</strong><br>
+              SQL schema, unique B-tree index on <code>short_code</code>.
+            </div>
+            <div class="p-2 bg-[#F4F1EA] sketch-border">
+              <strong>5. Step 5: High-Level Design</strong><br>
+              LB → App Servers → Redis Cache → Sharded DB.
+            </div>
+            <div class="p-2 bg-[#F4F1EA] sketch-border">
+              <strong>6. Step 6: Deep Dives</strong><br>
+              KGS ZooKeeper coordination, 301 vs 302, Kafka analytics stream.
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button onclick="closeModal('notesModal')" class="bg-[#0E2A5C] text-white px-5 py-2 sketch-border font-bold hover:bg-[#D12828] transition-colors cursor-pointer">
+            Close Blueprint
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Client-side Logic -->
+  <script>
+    // 12-Topic System Design Curriculum
+    const SYSTEM_DESIGN_CHAPTERS = [
+      {
+        id: 1,
+        title: "Design a URL Shortener (TinyURL / Bitly)",
+        category: "case_study",
+        summary: "Architecting a high-throughput, read-heavy URL shortener capable of generating compact unique aliases and redirecting millions of daily users. In-depth breakdown of Base62 encoding, Key Generation Service (KGS), 301 vs 302 redirect HTTP semantics, Redis cache-aside caching, database indexing & sharding, and collision mitigation.",
+        status: "completed",
+        takeaways: [
+          "Base62 encoding (62^7 ≈ 3.52 Trillion URLs) vs MD5/SHA-256 hash truncation",
+          "HTTP 301 (Permanent / Browser Cached) vs HTTP 302 (Temporary / Server Tracked Analytics)",
+          "100:1 Read-to-Write traffic asymmetry & multi-tier Redis Cache-Aside sizing",
+          "Database partitioning by Hash(short_key) % N and KGS pre-allocated key ranges"
+        ]
+      },
+      {
+        id: 2,
+        title: "Scale from Zero to Millions of Users",
+        category: "fundamentals",
+        summary: "Systematic evolution from a monolithic single server setup to horizontal scaling: DNS Anycast, stateless web tiers, database replication, multi-datacenter failover, and CDN edge caching.",
+        status: "upcoming",
+        takeaways: ["Vertical vs Horizontal scaling trade-offs", "Stateless tier decoupling for auto-scaling", "Multi-region active-active deployment"]
+      },
+      {
+        id: 3,
+        title: "Consistent Hashing & Distributed Caching",
+        category: "caching",
+        summary: "Resolving the hot-spot hash rehashing problem with consistent hashing rings, virtual nodes, cache-aside vs write-through patterns, and cache stampede mitigation.",
+        status: "upcoming",
+        takeaways: ["Virtual nodes for uniform load distribution", "Cache stampede & dog-piling prevention", "LRU/LFU eviction in memory clusters"]
+      },
+      {
+        id: 4,
+        title: "Design a Distributed Rate Limiter",
+        category: "system",
+        summary: "Throttling abuse at the API gateway layer using Token Bucket, Leaky Bucket, Sliding Window Log, and distributed Redis synchronization via Lua scripts.",
+        status: "upcoming",
+        takeaways: ["Token Bucket vs Sliding Window Counter", "Race conditions & atomic Redis Lua execution", "HTTP 429 Too Many Requests response envelope"]
+      },
+      {
+        id: 5,
+        title: "Database Sharding & Partitioning Strategies",
+        category: "data",
+        summary: "Scaling relational storage horizontally: range-based vs hash-based sharding, join bottlenecks, distributed transactions (2PC/Saga), and schema migration at scale.",
+        status: "upcoming",
+        takeaways: ["Choosing the optimal shard key", "Resharding & data migration with zero downtime", "Cross-shard joins & scatter-gather queries"]
+      },
+      {
+        id: 6,
+        title: "Message Queues & Event-Driven Architecture",
+        category: "system",
+        summary: "Decoupling services with high-throughput distributed commit logs: Kafka partitions, consumer groups, offset commits, at-least-once vs exactly-once semantics.",
+        status: "upcoming",
+        takeaways: ["Log partitions and consumer group parallelism", "Idempotent consumer message processing", "Dead-letter queues and poison pill isolation"]
+      },
+      {
+        id: 7,
+        title: "Design a Distributed Key-Value Store",
+        category: "data",
+        summary: "Building Dynamo-style decentralized storage: CAP theorem trade-offs, vector clocks, quorum consensus (N, R, W), and hinted handoff.",
+        status: "upcoming",
+        takeaways: ["Sloppy quorum & hinted handoff", "Vector clocks for concurrent conflict resolution", "SSTables & LSM Trees write path"]
+      },
+      {
+        id: 8,
+        title: "Design a Distributed Notification Service",
+        category: "system",
+        summary: "Building multi-channel push notification pipelines: mobile APNs/FCM, SMS, email gateways, rate limiting, and prioritized worker queues.",
+        status: "upcoming",
+        takeaways: ["De-duplication mechanisms across delivery retries", "Priority queues for transactional vs marketing alerts", "Vendor gateway fallback routing"]
+      },
+      {
+        id: 9,
+        title: "Design a News Feed System (Twitter / Facebook)",
+        category: "case_study",
+        summary: "Architecting timeline generation: Fan-out on write (push model) vs Fan-out on read (pull model), hybrid celebrity fan-out, and Redis timeline caching.",
+        status: "upcoming",
+        takeaways: ["Push model vs Pull model trade-offs", "Celebrity user fan-out mitigation", "Multi-tiered feed ranking & caching"]
+      },
+      {
+        id: 10,
+        title: "Design a Distributed Web Crawler",
+        category: "case_study",
+        summary: "Scraping billions of web pages: URL frontier, politeness delays, DNS caching, content-seen duplicate detection with Bloom Filters, and distributed workers.",
+        status: "upcoming",
+        takeaways: ["Bloom filters for billion-URL set membership", "Politeness & priority queues", "Robust HTML parsing & dead-loop traps"]
+      },
+      {
+        id: 11,
+        title: "Design a Real-Time Chat System (WhatsApp / Discord)",
+        category: "case_study",
+        summary: "Bi-directional real-time communication: WebSocket connection managers, presence servers, group message fan-out, and message sequencing with Snowflakes.",
+        status: "upcoming",
+        takeaways: ["Maintaining persistent WebSocket connections at scale", "Distributed presence tracking with Redis heartbeats", "Message ordering across partitions"]
+      },
+      {
+        id: 12,
+        title: "Design a Video Streaming Platform (YouTube / Netflix)",
+        category: "case_study",
+        summary: "Massive media delivery: distributed video transcoding DAGs, Adaptive Bitrate Streaming (HLS/DASH), multi-tier CDN edge caching, and DRM encryption.",
+        status: "upcoming",
+        takeaways: ["Video chunking & parallel transcoding pipelines", "Adaptive bitrate switching mechanics", "CDN peering & origin shielding"]
+      }
+    ];
+
+    // State
+    let activeCategory = 'all';
+    let searchQuery = '';
+    let isRead = localStorage.getItem('system_design_url_shortener_read') === 'true';
+
+    // Render Chapters
+    function renderChapters() {
+      const container = document.getElementById('chaptersContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const filtered = SYSTEM_DESIGN_CHAPTERS.filter(ch => {
+        const matchesCategory = activeCategory === 'all' || ch.category === activeCategory;
+        const matchesSearch = ch.title.toLowerCase().includes(searchQuery) ||
+                              ch.summary.toLowerCase().includes(searchQuery) ||
+                              ch.id.toString() === searchQuery;
+        return matchesCategory && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full text-center py-12 bg-white sketch-border">
+            <div class="text-2xl font-bold text-[#D12828] mb-2 font-['Lexend']">No topics matched your search!</div>
+            <p class="text-[#333]">Try searching for "URL Shortener", "Sharding", "Cache", or "Kafka".</p>
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach((ch, idx) => {
+        const isUrlShortener = ch.id === 1;
+        const rotationClass = idx % 3 === 0 ? '-rotate-1' : (idx % 2 === 0 ? 'rotate-1' : 'rotate-0');
+        
+        let badgeHtml = '';
+        let actionBtnHtml = '';
+
+        if (isUrlShortener) {
+          badgeHtml = '<span class="bg-[#D12828] text-white text-[10px] font-bold px-1.5 py-0.2 sketch-border">★ ACTIVE CHAPTER READY</span>';
+          actionBtnHtml = `
+            <div class="mb-3 flex flex-wrap gap-2">
+              <button onclick="openUrlShortenerNotesModal()" class="text-xs bg-[#D12828] text-white px-3 py-1.5 sketch-border hover:bg-[#0E2A5C] transition-colors font-bold flex items-center gap-1 cursor-pointer">
+                <span>Read Architecture Notes →</span>
+              </button>
+              <a href="#simulator" class="text-xs bg-[#FFFFA5] text-[#0E2A5C] px-3 py-1.5 sketch-border hover:bg-yellow-200 transition-colors font-bold flex items-center gap-1">
+                <span>Launch Simulator ⚙</span>
+              </a>
+            </div>
+          `;
+        } else {
+          badgeHtml = '<span class="bg-[#0E2A5C] text-white text-[10px] font-bold px-1.5 py-0.2 sketch-border">UPCOMING TOPIC</span>';
+          actionBtnHtml = `
+            <div class="mb-3">
+              <span class="text-xs font-mono font-bold text-gray-500 bg-[#F4F1EA] px-2 py-1 sketch-border inline-block">Curriculum Blueprint in Progress</span>
+            </div>
+          `;
+        }
+
+        const card = document.createElement('div');
+        card.className = `bg-white p-6 sketch-border sketch-shadow flex flex-col justify-between transform ${rotationClass} hover:rotate-0 transition-transform relative group ${isUrlShortener ? 'border-2 border-[#D12828]' : ''}`;
+
+        card.innerHTML = `
+          ${idx % 4 === 0 ? '<div class="tape-top"></div>' : ''}
+
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-1.5">
+                <span class="bg-[#FFFFA5] text-[#0E2A5C] text-xs font-bold px-2 py-0.5 sketch-border font-mono">
+                  CH ${ch.id < 10 ? '0' + ch.id : ch.id}
+                </span>
+                ${badgeHtml}
+              </div>
+              ${isUrlShortener ? `
+                <button id="markReadBtn" onclick="toggleUrlShortenerRead()" class="text-xs font-bold px-2 py-0.5 sketch-border cursor-pointer transition-colors ${isRead ? 'bg-[#D12828] text-white' : 'bg-[#F4F1EA] text-[#333] hover:bg-[#FFFFA5]'}">
+                  ${isRead ? '✓ Read' : '+ Mark Read'}
+                </button>
+              ` : `
+                <span class="text-[11px] text-gray-500 font-mono">Planned</span>
+              `}
+            </div>
+
+            <h3 class="text-xl sm:text-2xl font-bold text-[#0E2A5C] group-hover:text-[#D12828] transition-colors mb-2">
+              ${ch.title}
+            </h3>
+
+            <p class="text-sm text-[#333] leading-relaxed mb-4 font-['Lexend']">
+              ${ch.summary}
+            </p>
+
+            ${isUrlShortener ? `
+              <div class="bg-[#F4F1EA] p-3 sketch-border mb-4 text-xs space-y-1.5">
+                <div class="font-bold text-[#0E2A5C] mb-1">Architecture Highlights:</div>
+                <div class="flex items-start gap-1.5">
+                  <span class="text-[#D12828] font-bold">•</span>
+                  <span><strong>Base62 Encoding:</strong> 7 chars yields 62<sup>7</sup> ≈ 3.52 Trillion unique links without hash collisions.</span>
+                </div>
+                <div class="flex items-start gap-1.5">
+                  <span class="text-[#D12828] font-bold">•</span>
+                  <span><strong>HTTP 301 vs 302:</strong> Trade-off between browser-cached redirects and server telemetry/analytics.</span>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+
+          <div>
+            ${actionBtnHtml}
+            <div class="pt-3 border-t-2 border-dashed border-[#0E2A5C]/30 flex items-center justify-between text-xs font-bold">
+              <span class="uppercase text-[#D12828]">${ch.category.replace('_', ' ')}</span>
+              ${isUrlShortener ? `
+                <button onclick="openUrlShortenerNotesModal()" class="text-[#0E2A5C] hover:underline cursor-pointer flex items-center gap-1">
+                  Full Blueprint →
+                </button>
+              ` : `
+                <span class="text-gray-400 font-normal">Coming Soon</span>
+              `}
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // Toggle Mark Read
+    function toggleUrlShortenerRead() {
+      isRead = !isRead;
+      localStorage.setItem('system_design_url_shortener_read', isRead);
+      renderChapters();
+    }
+
+    // Filter handling
+    function filterCategory(cat) {
+      activeCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = 'cat-btn active bg-[#0E2A5C] text-white px-3 py-1.5 sketch-border text-sm font-bold transition-all cursor-pointer';
+        } else {
+          btn.className = 'cat-btn bg-[#F4F1EA] text-[#0E2A5C] px-3 py-1.5 sketch-border text-sm font-bold hover:bg-[#FFFFA5] transition-all cursor-pointer';
+        }
+      });
+      renderChapters();
+    }
+
+    // Search filter
+    const searchInput = document.getElementById('curriculumSearch');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase().trim();
+        renderChapters();
+      });
+    }
+
+    // Modal helpers
+    function openUrlShortenerNotesModal() {
+      const modal = document.getElementById('notesModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    // Close on backdrop click & ESC
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal('notesModal');
+      }
+    });
+
+    document.getElementById('notesModal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'notesModal') {
+        closeModal('notesModal');
+      }
+    });
+
+    // Base62 helper
+    const BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    function toBase62(num) {
+      let s = '';
+      while (num > 0) {
+        s = BASE62_CHARS[num % 62] + s;
+        num = Math.floor(num / 62);
+      }
+      return s || '0';
+    }
+
+    let lastGeneratedCode = 'b9X7qL';
+    let lastRedirectType = '301';
+    let lastOriginalUrl = '';
+
+    // Run URL Shorten Simulation
+    function runUrlShortenSimulation() {
+      const urlInput = document.getElementById('longUrlInput');
+      const algoSelect = document.getElementById('algoSelect');
+      const redirectSelect = document.getElementById('redirectTypeSelect');
+      const traceBox = document.getElementById('simulationTrace');
+      const resultBox = document.getElementById('resultBox');
+      const shortUrlSpan = document.getElementById('shortResultUrl');
+
+      const originalUrl = urlInput.value.trim() || 'https://firstprinciples.dev/system-design';
+      const algo = algoSelect.value;
+      const redirectType = redirectSelect.value;
+      lastOriginalUrl = originalUrl;
+      lastRedirectType = redirectType;
+
+      let code = '';
+      let steps = [];
+
+      steps.push(`[1] Ingress Gate: Validated RFC 3986 URI format (${originalUrl.length} bytes).`);
+
+      if (algo === 'base62') {
+        const idVal = Math.floor(1000000000 + Math.random() * 9000000000);
+        code = toBase62(idVal).substring(0, 7).padStart(7, 'a');
+        steps.push(`[2] Snowflake Generator: Allocated distributed 64-bit integer ID: ${idVal.toLocaleString()}.`);
+        steps.push(`[3] Base62 Encoder: Transformed ID (${idVal}) into 7-char alphanumeric code: "${code}".`);
+      } else if (algo === 'kgs') {
+        const kgsPool = ['x9R2pM4', 'k8L1vN9', 'm3Q7wZ2', 'b9X7qL1', 't5Y8sK3'];
+        code = kgsPool[Math.floor(Math.random() * kgsPool.length)];
+        steps.push(`[4] Key Generation Service: Fetched pre-allocated offline key from memory buffer: "${code}".`);
+        steps.push(`[5] KGS Marker: Flagged key "${code}" as USED in ZooKeeper cluster (0ms collision check).`);
+      } else {
+        code = Math.random().toString(36).substring(2, 9);
+        steps.push(`[2] MD5 Hash: Computed 128-bit MD5 checksum.`);
+        steps.push(`[3] Hash Truncate: Extracted first 7 chars: "${code}".`);
+        steps.push(`[4] Collision Check: SELECT 1 FROM urls WHERE short_code='${code}' (Query: 2.1ms -> No collision).`);
+      }
+
+      lastGeneratedCode = code;
+
+      steps.push(`[6] Cache Write: SET redis_cache:url:${code} -> "${originalUrl}" [TTL: 2,592,000s].`);
+      steps.push(`[7] Sharded DB Write: INSERT INTO urls_shard_${Math.abs(code.charCodeAt(0) % 4)} (short_code, original_url, created_at) VALUES ('${code}', '${originalUrl.substring(0, 30)}...', NOW()).`);
+      steps.push(`[8] Pipeline Success: HTTP 201 Created. Short link ready.`);
+
+      traceBox.innerHTML = `
+        <div class="text-[#0E2A5C] font-bold text-sm mb-2 border-b border-dashed border-[#0E2A5C] pb-1">
+          SYSTEM EXECUTION TRACE (${algo.toUpperCase()} PIPELINE):
+        </div>
+        ${steps.map(s => `<div class="text-gray-800 leading-relaxed">${s}</div>`).join('')}
+      `;
+
+      shortUrlSpan.innerText = `https://tiny.notes/${code}`;
+      resultBox.classList.remove('hidden');
+
+      document.getElementById('browserSimulationOutput').innerHTML = `
+        <div class="bg-[#F4F1EA] p-4 sketch-border font-mono text-xs space-y-2">
+          <div class="text-xs font-bold text-[#0E2A5C] mb-1">SHORT LINK PREPARED:</div>
+          <div>Short Alias: <span class="text-[#D12828] font-bold">https://tiny.notes/${code}</span></div>
+          <div>Configured Redirect Code: <span class="text-[#0E2A5C] font-bold">HTTP ${redirectType}</span></div>
+          <div class="pt-2">
+            <button onclick="testBrowserRedirect()" class="bg-[#0E2A5C] text-white px-3 py-1.5 sketch-border text-xs font-bold hover:bg-[#D12828] transition-colors cursor-pointer">
+              Simulate Browser Visit →
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Simulate Browser Visit
+    function testBrowserRedirect() {
+      const output = document.getElementById('browserSimulationOutput');
+      const is301 = lastRedirectType === '301';
+
+      output.innerHTML = `
+        <div class="bg-[#F4F1EA] p-4 sketch-border font-mono text-xs space-y-3">
+          <div class="flex items-center justify-between border-b border-dashed border-[#0E2A5C] pb-2">
+            <span class="font-bold text-[#0E2A5C]">CLIENT ──▶ SERVER RAW WIRE TRACE</span>
+            <span class="bg-${is301 ? '[#D12828]' : '[#0E2A5C]'} text-white px-2 py-0.5 sketch-border font-bold text-[10px]">
+              HTTP ${lastRedirectType} ${is301 ? 'MOVED PERMANENTLY' : 'FOUND'}
+            </span>
+          </div>
+
+          <!-- Request -->
+          <div>
+            <div class="text-[11px] font-bold text-[#D12828]">CLIENT REQUEST:</div>
+            <div class="bg-white p-2 sketch-border text-[11px] text-[#333] space-y-0.5">
+              <div>GET /${lastGeneratedCode} HTTP/1.1</div>
+              <div>Host: tiny.notes</div>
+              <div>User-Agent: Mozilla/5.0 (Macintosh; Apple Silicon) AppleWebKit/537.36</div>
+              <div>Accept: text/html,application/xhtml+xml</div>
+            </div>
+          </div>
+
+          <!-- Server Processing -->
+          <div class="bg-[#FFFFA5] p-2.5 sketch-border text-[11px] space-y-1">
+            <div class="font-bold text-[#0E2A5C]">Backend Execution Telemetry:</div>
+            <div>• Redis Cache Check: <code>GET url:${lastGeneratedCode}</code> ──▶ <strong class="text-green-800">HIT (1.1ms)</strong></div>
+            <div>• Kafka Event Emitted: <code>url_clicks (ip=198.51.100.24, geo=US, ts=1771408800)</code></div>
+            <div>• Response Generated in <strong>1.8ms</strong></div>
+          </div>
+
+          <!-- Response -->
+          <div>
+            <div class="text-[11px] font-bold text-[#0E2A5C]">HTTP RESPONSE HEADERS:</div>
+            <div class="bg-white p-2 sketch-border text-[11px] text-[#333] space-y-0.5">
+              <div class="text-[#D12828] font-bold">HTTP/1.1 ${lastRedirectType} ${is301 ? 'Moved Permanently' : 'Found'}</div>
+              <div class="font-bold text-blue-900">Location: ${lastOriginalUrl || 'https://engineering.firstprinciples.dev'}</div>
+              <div>X-Cache: HIT (Redis In-Memory)</div>
+              <div>X-Execution-Time: 1.8ms</div>
+              <div>${is301 ? 'Cache-Control: max-age=31536000, public' : 'Cache-Control: no-cache, no-store, must-revalidate'}</div>
+              <div>Connection: keep-alive</div>
+            </div>
+          </div>
+
+          <!-- Browser Action -->
+          <div class="p-2 sketch-border ${is301 ? 'bg-red-50 border-red-700 text-red-900' : 'bg-blue-50 border-blue-700 text-blue-900'} text-[11px]">
+            <strong>Client Browser Reaction:</strong>
+            ${is301 ? 
+              'The browser stores this redirect in its local disk cache. Any subsequent request for <code>tiny.notes/' + lastGeneratedCode + '</code> will bypass our server completely and navigate straight to the destination.' : 
+              'The browser executes the redirect immediately without caching. Every single click will consult our backend, guaranteeing 100% accurate click analytics.'}
+          </div>
+        </div>
+      `;
+    }
+
+    // Capacity Calculator
+    function calculateCapacity() {
+      const urlsPerMonth = parseInt(document.getElementById('urlsPerMonthSlider').value, 10);
+      const readRatio = parseInt(document.getElementById('readRatioSlider').value, 10);
+      const retentionYears = parseInt(document.getElementById('retentionSlider').value, 10);
+
+      document.getElementById('urlsPerMonthLabel').innerText = `${urlsPerMonth} Million`;
+      document.getElementById('readRatioLabel').innerText = `${readRatio} : 1`;
+      document.getElementById('retentionLabel').innerText = `${retentionYears} Year${retentionYears > 1 ? 's' : ''}`;
+
+      const SECONDS_PER_MONTH = 2592000;
+      const totalUrlsPerMonth = urlsPerMonth * 1000000;
+
+      const writeQps = Math.round(totalUrlsPerMonth / SECONDS_PER_MONTH);
+      const peakWriteQps = Math.round(writeQps * 2);
+
+      const readQps = Math.round(writeQps * readRatio);
+      const peakReadQps = Math.round(readQps * 2);
+
+      const BYTES_PER_RECORD = 500;
+      const totalRecords = totalUrlsPerMonth * 12 * retentionYears;
+      const totalBytes = totalRecords * BYTES_PER_RECORD;
+      const totalTB = (totalBytes / (1024 * 1024 * 1024 * 1024)).toFixed(1);
+      const totalBillions = (totalRecords / 1000000000).toFixed(1);
+
+      const dailyReads = readQps * 86400;
+      const cachedUrlsDaily = dailyReads * 0.20;
+      const redisBytes = cachedUrlsDaily * BYTES_PER_RECORD;
+      const redisGB = (redisBytes / (1024 * 1024 * 1024)).toFixed(1);
+
+      document.getElementById('writeQpsOutput').innerText = `~${writeQps.toLocaleString()} writes/sec`;
+      document.getElementById('peakWriteQpsOutput').innerText = `Peak (2x): ~${peakWriteQps.toLocaleString()} writes/sec`;
+
+      document.getElementById('readQpsOutput').innerText = `~${readQps.toLocaleString()} reads/sec`;
+      document.getElementById('peakReadQpsOutput').innerText = `Peak (2x): ~${peakReadQps.toLocaleString()} reads/sec`;
+
+      document.getElementById('storageOutput').innerText = `~${totalTB} TB`;
+      document.getElementById('totalUrlsOutput').innerText = `Across ${totalBillions} Billion rows`;
+
+      document.getElementById('redisRamOutput').innerText = `~${redisGB} GB`;
+    }
+
+    // Initialize UI on load
+    document.addEventListener('DOMContentLoaded', () => {
+      renderChapters();
+      calculateCapacity();
+    });
+  </script>
+
+</body>
+</html>

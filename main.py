@@ -62,6 +62,133 @@ PLAYLIST_INFO = PlaylistInfo(
     total_chapters=30
 )
 
+# System Design Curriculum (High-Scale Case Studies & Distributed Systems)
+SYSTEM_DESIGN_INFO = PlaylistInfo(
+    title="System Design from First Principles",
+    creator="System Architecture First Principles",
+    playlist_id="system-design-first-principles",
+    playlist_url="https://youtube.com/playlist?list=PLui3EUkuMTPgZcV0QhQrOcwMPcBCcd_Q1",
+    total_chapters=12
+)
+
+SYSTEM_DESIGN_CHAPTERS_DB: List[Chapter] = [
+    Chapter(
+        id=1,
+        title="Design a URL Shortener (TinyURL / Bitly)",
+        category="case_study",
+        folder="url_shortener",
+        summary="Architecting a high-throughput, read-heavy URL shortener capable of generating compact unique aliases and redirecting millions of daily users. In-depth breakdown of Base62 encoding, Key Generation Service (KGS), 301 vs 302 redirect HTTP semantics, Redis cache-aside caching, database indexing & sharding, and collision mitigation.",
+        takeaways=[
+            "Base62 encoding (62^7 ≈ 3.52 Trillion URLs) vs MD5/SHA-256 hash truncation",
+            "HTTP 301 (Permanent / Browser Cached) vs HTTP 302 (Temporary / Server Tracked Analytics)",
+            "100:1 Read-to-Write traffic asymmetry & multi-tier Redis Cache-Aside sizing",
+            "Database partitioning by Hash(short_key) % N and KGS pre-allocated key ranges"
+        ],
+        has_transcript=False,
+        has_interactive_notes=True,
+        status="completed"
+    ),
+    Chapter(
+        id=2,
+        title="Scale from Zero to Millions of Users",
+        category="fundamentals",
+        folder="scale_zero_to_millions",
+        summary="Systematic evolution from a monolithic single server setup to horizontal scaling: DNS Anycast, stateless web tiers, database replication, multi-datacenter failover, and CDN edge caching.",
+        takeaways=["Vertical vs Horizontal scaling trade-offs", "Stateless tier decoupling for auto-scaling", "Multi-region active-active deployment"],
+        status="upcoming"
+    ),
+    Chapter(
+        id=3,
+        title="Consistent Hashing & Distributed Caching",
+        category="caching",
+        folder="consistent_hashing",
+        summary="Resolving the hot-spot hash rehashing problem with consistent hashing rings, virtual nodes, cache-aside vs write-through patterns, and cache stampede mitigation.",
+        takeaways=["Virtual nodes for uniform load distribution", "Cache stampede & dog-piling prevention", "LRU/LFU eviction in memory clusters"],
+        status="upcoming"
+    ),
+    Chapter(
+        id=4,
+        title="Design a Distributed Rate Limiter",
+        category="system",
+        folder="rate_limiter",
+        summary="Throttling abuse at the API gateway layer using Token Bucket, Leaky Bucket, Sliding Window Log, and distributed Redis synchronization via Lua scripts.",
+        takeaways=["Token Bucket vs Sliding Window Counter", "Race conditions & atomic Redis Lua execution", "HTTP 429 Too Many Requests response envelope"],
+        status="upcoming"
+    ),
+    Chapter(
+        id=5,
+        title="Database Sharding & Partitioning Strategies",
+        category="data",
+        folder="database_sharding",
+        summary="Scaling relational storage horizontally: range-based vs hash-based sharding, join bottlenecks, distributed transactions (2PC/Saga), and schema migration at scale.",
+        takeaways=["Choosing the optimal shard key", "Resharding & data migration with zero downtime", "Cross-shard joins & scatter-gather queries"],
+        status="upcoming"
+    ),
+    Chapter(
+        id=6,
+        title="Message Queues & Event-Driven Architecture",
+        category="system",
+        folder="message_queues",
+        summary="Decoupling services with high-throughput distributed commit logs: Kafka partitions, consumer groups, offset commits, at-least-once vs exactly-once semantics.",
+        takeaways=["Log partitions and consumer group parallelism", "Idempotent consumer message processing", "Dead-letter queues and poison pill isolation"],
+        status="upcoming"
+    ),
+    Chapter(
+        id=7,
+        title="Design a Distributed Key-Value Store",
+        category="data",
+        folder="distributed_kv_store",
+        summary="Building Dynamo-style decentralized storage: CAP theorem trade-offs, vector clocks, quorum consensus (N, R, W), and hinted handoff.",
+        takeaways=["Sloppy quorum & hinted handoff", "Vector clocks for concurrent conflict resolution", "SSTables & LSM Trees write path"],
+        status="upcoming"
+    ),
+    Chapter(
+        id=8,
+        title="Design a Distributed Notification Service",
+        category="system",
+        folder="notification_service",
+        summary="Building multi-channel push notification pipelines: mobile APNs/FCM, SMS, email gateways, rate limiting, and prioritized worker queues.",
+        takeaways=["De-duplication mechanisms across delivery retries", "Priority queues for transactional vs marketing alerts", "Vendor gateway fallback routing"],
+        status="upcoming"
+    ),
+    Chapter(
+        id=9,
+        title="Design a News Feed System (Twitter / Facebook)",
+        category="case_study",
+        folder="news_feed",
+        summary="Architecting timeline generation: Fan-out on write (push model) vs Fan-out on read (pull model), hybrid celebrity fan-out, and Redis timeline caching.",
+        takeaways=["Push model vs Pull model trade-offs", "Celebrity user fan-out mitigation", "Multi-tiered feed ranking & caching"],
+        status="upcoming"
+    ),
+    Chapter(
+        id=10,
+        title="Design a Distributed Web Crawler",
+        category="case_study",
+        folder="web_crawler",
+        summary="Scraping billions of web pages: URL frontier, politeness delays, DNS caching, content-seen duplicate detection with Bloom Filters, and distributed workers.",
+        takeaways=["Bloom filters for billion-URL set membership", "Politeness & priority queues", "Robust HTML parsing & dead-loop traps"],
+        status="upcoming"
+    ),
+    Chapter(
+        id=11,
+        title="Design a Real-Time Chat System (WhatsApp / Discord)",
+        category="case_study",
+        folder="chat_system",
+        summary="Bi-directional real-time communication: WebSocket connection managers, presence servers, group message fan-out, and message sequencing with Snowflakes.",
+        takeaways=["Maintaining persistent WebSocket connections at scale", "Distributed presence tracking with Redis heartbeats", "Message ordering across partitions"],
+        status="upcoming"
+    ),
+    Chapter(
+        id=12,
+        title="Design a Video Streaming Platform (YouTube / Netflix)",
+        category="case_study",
+        folder="video_streaming",
+        summary="Massive media delivery: distributed video transcoding DAGs, Adaptive Bitrate Streaming (HLS/DASH), multi-tier CDN edge caching, and DRM encryption.",
+        takeaways=["Video chunking & parallel transcoding pipelines", "Adaptive bitrate switching mechanics", "CDN peering & origin shielding"],
+        status="upcoming"
+    )
+]
+
 CHAPTERS_DB: List[Chapter] = [
     Chapter(
         id=1,
@@ -377,6 +504,23 @@ async def serve_what_is_backend(request: Request):
         context={"request": request}
     )
 
+@app.get("/system_design", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/system_design/", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/system-design", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/system-design/", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/system_design/index.html", response_class=HTMLResponse, tags=["Pages"])
+async def serve_system_design_page(request: Request):
+    """Serves the sketch-note styled System Design landing page with URL Shortener case study."""
+    return templates.TemplateResponse(
+        request=request,
+        name="system_design.html",
+        context={
+            "request": request,
+            "chapters": SYSTEM_DESIGN_CHAPTERS_DB,
+            "playlist": SYSTEM_DESIGN_INFO
+        }
+    )
+
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc: HTTPException):
     """Handles 404 errors with JSON for API endpoints and custom sketch template for web pages."""
@@ -459,6 +603,21 @@ async def get_transcript_text(chapter_name: str):
         detail=f"Transcript not found for '{chapter_name}'. Transcripts are available for 'rest_api', 'http', and 'what_is_backend'."
     )
 
+# --- SYSTEM DESIGN ENDPOINTS ---
+
+@app.get("/api/system-design/chapters", response_model=List[Chapter], tags=["System Design"])
+async def get_system_design_chapters():
+    """Returns all System Design chapters."""
+    return SYSTEM_DESIGN_CHAPTERS_DB
+
+@app.get("/api/system-design/chapters/{chapter_id}", response_model=Chapter, tags=["System Design"])
+async def get_system_design_chapter_by_id(chapter_id: int):
+    """Returns details for a single System Design chapter by ID."""
+    for ch in SYSTEM_DESIGN_CHAPTERS_DB:
+        if ch.id == chapter_id:
+            return ch
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"System Design Chapter {chapter_id} not found")
+
 @app.get("/api/health", tags=["Status"])
 async def health_check():
     """Health check endpoint confirming FastAPI server status."""
@@ -466,7 +625,8 @@ async def health_check():
         "status": "online",
         "app": "Backend Notes API",
         "version": "1.0.0",
-        "total_chapters": len(CHAPTERS_DB),
+        "total_backend_chapters": len(CHAPTERS_DB),
+        "total_system_design_chapters": len(SYSTEM_DESIGN_CHAPTERS_DB),
         "playlist": PLAYLIST_INFO.playlist_url
     }
 
