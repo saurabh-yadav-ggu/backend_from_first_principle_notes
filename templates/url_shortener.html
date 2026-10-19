@@ -1,0 +1,2795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Design a URL Shortener (TinyURL / Bitly) — Complete hand-drawn sketch notes masterclass covering the 5-step interview framework, MD5 collision cascades, distributed counters, Apache ZooKeeper, 64-bit Snowflake IDs, 301 vs 302 redirects, and dual-layer cache TTL expiry.">
+  <title>Design a URL Shortener — System Design Sketch Notes Masterclass</title>
+
+  <!-- Google Fonts: Lexend (rules.md) & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+
+  <!-- Shared Sketch Theme CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/sketch-theme.css') }}">
+
+  <style>
+    /* Scoped Chapter Styles & Design System */
+    :root {
+      --paper-note: #F4F1EA;
+      --paper-card: #FFFFFF;
+      --ink-blue: #0E2A5C;
+      --ink-subtle: #1e3a6d;
+      --pencil-grey: #333333;
+      --pencil-light: #555555;
+      --alert-red: #D12828;
+      --alert-red-subtle: rgba(209, 40, 40, 0.12);
+      --highlighter-yellow: #FFFFA5;
+      --highlighter-green: #d4f8d4;
+      --ballpoint-blue: #0000FF;
+      --border-dark: #0E2A5C;
+      --border-subtle: #cbd5e1;
+
+      --font-hand: 'Lexend', sans-serif;
+      --font-sans: 'Lexend', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --header-height: 68px;
+      --footer-height: 64px;
+      --container-max: 1180px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--paper-note);
+      color: var(--pencil-grey);
+      font-family: 'Lexend', sans-serif;
+      font-optical-sizing: auto;
+      background-image: linear-gradient(rgba(180, 195, 220, 0.25) 1px, transparent 1px);
+      background-size: 100% 1.6em;
+      line-height: 1.6;
+      font-size: 1.05rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+    .container {
+      width: 100%;
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+
+    /* Global Header */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(244, 241, 234, 0.95);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 2px solid var(--ink-blue);
+      box-shadow: 0 2px 6px rgba(14, 42, 92, 0.08);
+      height: var(--header-height);
+    }
+
+    .header-inner {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-portal-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.65rem;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+      transition: all 0.15s ease;
+    }
+    .nav-portal-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 3px 3px 0px 0px var(--alert-red);
+      border-color: var(--alert-red);
+      color: var(--alert-red);
+    }
+
+    .chapter-badge-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.6rem;
+      background: var(--highlighter-yellow);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 12px 225px 12px/12px 225px 12px 255px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--ink-blue);
+    }
+
+    /* View Switcher Tabs */
+    .view-tabs {
+      display: inline-flex;
+      align-items: center;
+      background: #EAE6DC;
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      padding: 0.2rem;
+      gap: 0.2rem;
+    }
+
+    .view-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      transition: all 0.15s ease;
+    }
+    .view-tab-btn:hover {
+      background: rgba(255, 255, 165, 0.6);
+    }
+    .view-tab-btn.active {
+      background: var(--ink-blue);
+      color: #FFF;
+      box-shadow: 1px 2px 0px 0px rgba(0,0,0,0.2);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .icon-action-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 10px 225px 10px/10px 225px 10px 255px;
+      color: var(--ink-blue);
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+      transition: all 0.15s ease;
+    }
+    .icon-action-btn:hover {
+      transform: translateY(-1px);
+      background: var(--highlighter-yellow);
+    }
+    .icon-action-btn.active {
+      background: var(--alert-red);
+      color: #FFF;
+      border-color: var(--alert-red);
+    }
+
+    /* Main Container & Layout */
+    main {
+      flex: 1;
+      padding: 1.5rem 0 3rem 0;
+    }
+
+    /* Presentation View Elements */
+    #presentationView {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .slide-wrapper {
+      display: none;
+      width: 100%;
+      max-width: var(--container-max);
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+    .slide-wrapper.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .slide-card {
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      border-radius: 240px 20px 210px 18px / 18px 210px 18px 240px;
+      box-shadow: 6px 7px 0px 0px var(--ink-blue);
+      padding: 2.25rem 2.5rem;
+      position: relative;
+    }
+
+    .slide-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px dashed rgba(14, 42, 92, 0.25);
+    }
+
+    .slide-step-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: var(--highlighter-yellow);
+      color: var(--ink-blue);
+      padding: 0.2rem 0.5rem;
+      border: 1.5px solid var(--ink-blue);
+      border-radius: 4px;
+    }
+
+    .slide-topic-tag {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--alert-red);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .slide-title {
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: var(--ink-blue);
+      line-height: 1.25;
+      margin-bottom: 0.5rem;
+    }
+
+    .slide-intro {
+      font-size: 1.12rem;
+      color: #444;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+
+    /* Content Cards & Grids */
+    .content-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    .content-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .card {
+      background: var(--paper-note);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      padding: 1.25rem;
+      position: relative;
+    }
+    .card-white { background: #FFFFFF; }
+    .card-yellow { background: var(--highlighter-yellow); }
+    .card-red { background: #FFF0F0; border-color: var(--alert-red); }
+    .card-green { background: var(--highlighter-green); border-color: #15803d; }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-red .card-title { color: var(--alert-red); }
+
+    /* SVG Diagram Container */
+    .sketch-diagram-box {
+      background: #FFFFFF;
+      border: 2px solid var(--ink-blue);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      box-shadow: inset 0 0 10px rgba(14, 42, 92, 0.04);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: auto;
+    }
+    .diagram-caption {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--ink-subtle);
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center;
+    }
+
+    /* Comparison Panels */
+    .code-comparison-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    .code-panel {
+      border: 2px solid var(--ink-blue);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #FFFFFF;
+    }
+    .code-header {
+      padding: 0.5rem 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: #EAE6DC;
+      border-bottom: 2px solid var(--ink-blue);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-header.danger { background: #FFE4E4; color: var(--alert-red); border-color: var(--alert-red); }
+    .code-header.success { background: #E6F8E6; color: #166534; border-color: #166534; }
+
+    pre.sketch-code {
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.55;
+      overflow-x: auto;
+      background: #FAFAFA;
+      color: #111;
+    }
+
+    /* Senior Engineer Rule of Thumb Sticky Note */
+    .sticky-note-callout {
+      background: var(--highlighter-yellow);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      padding: 1.15rem 1.5rem;
+      margin-top: 1.5rem;
+      position: relative;
+      box-shadow: 3px 4px 0px 0px var(--ink-blue);
+      transform: rotate(-0.5deg);
+    }
+
+    /* Floating Navigation Controls */
+    .deck-controls-bar {
+      position: sticky;
+      bottom: 1.5rem;
+      z-index: 90;
+      background: rgba(244, 241, 234, 0.95);
+      backdrop-filter: blur(8px);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 20px 225px 20px/20px 225px 20px 255px;
+      padding: 0.5rem 1rem;
+      box-shadow: 0 4px 12px rgba(14, 42, 92, 0.15), 4px 5px 0px 0px var(--ink-blue);
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .deck-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 1rem;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      transition: all 0.15s ease;
+    }
+    .deck-nav-btn:hover:not(:disabled) {
+      background: var(--highlighter-yellow);
+      transform: translateY(-1px);
+    }
+    .deck-nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .deck-nav-btn.primary {
+      background: var(--alert-red);
+      color: #FFF;
+      border-color: var(--alert-red);
+    }
+    .deck-nav-btn.primary:hover:not(:disabled) {
+      background: var(--ink-blue);
+      border-color: var(--ink-blue);
+    }
+
+    .slide-progress-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      min-width: 140px;
+    }
+    .slide-counter-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+    }
+    .progress-bar-track {
+      width: 100%;
+      height: 8px;
+      background: #EAE6DC;
+      border: 1.5px solid var(--ink-blue);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--alert-red);
+      width: 4%;
+      transition: width 0.2s ease;
+    }
+
+    /* Drawers (Notepad, Bookmarks, TOC, Search) */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(3px);
+      z-index: 200;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .drawer-overlay.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .slide-drawer {
+      position: fixed;
+      top: 0;
+      right: -450px;
+      width: 100%;
+      max-width: 420px;
+      height: 100vh;
+      background: var(--paper-note);
+      border-left: 3px solid var(--ink-blue);
+      box-shadow: -6px 0 20px rgba(0,0,0,0.15);
+      z-index: 210;
+      transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+    }
+    .slide-drawer.active {
+      right: 0;
+    }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 1rem;
+      border-bottom: 2px dashed rgba(14, 42, 92, 0.3);
+      margin-bottom: 1rem;
+    }
+    .drawer-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--ink-blue);
+    }
+    .drawer-close-btn {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--alert-red);
+      line-height: 1;
+    }
+
+    /* Modal (Search) */
+    .search-modal-box {
+      position: fixed;
+      top: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 640px;
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      border-radius: 12px;
+      box-shadow: 8px 10px 0px 0px var(--ink-blue);
+      padding: 1.5rem;
+      z-index: 220;
+    }
+
+    /* Views (Reader, Revision, Flashcards, Quiz) */
+    .view-content-wrapper {
+      display: none;
+      width: 100%;
+      max-width: var(--container-max);
+      margin: 0 auto;
+    }
+    .view-content-wrapper.active {
+      display: block;
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+
+    /* Flashcard Flip Deck Styles */
+    .flashcard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .flashcard-item {
+      height: 240px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+    .flashcard-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform-style: preserve-3d;
+    }
+    .flashcard-item.flipped .flashcard-inner {
+      transform: rotateY(180deg);
+    }
+    .flashcard-front, .flashcard-back {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      border: 2.5px solid var(--ink-blue);
+      border-radius: 14px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 4px 5px 0px 0px var(--ink-blue);
+    }
+    .flashcard-front {
+      background: #FFFFFF;
+    }
+    .flashcard-back {
+      background: var(--highlighter-yellow);
+      transform: rotateY(180deg);
+      text-align: left;
+    }
+
+    /* Quiz Container */
+    .quiz-card {
+      background: #FFFFFF;
+      border: 2.5px solid var(--ink-blue);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 4px 4px 0px 0px var(--ink-blue);
+    }
+    .quiz-option-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.75rem 1rem;
+      margin-top: 0.5rem;
+      background: var(--paper-note);
+      border: 1.5px solid var(--ink-blue);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--pencil-grey);
+      transition: all 0.15s ease;
+    }
+    .quiz-option-btn:hover:not(.locked) {
+      background: var(--highlighter-yellow);
+      transform: translateX(3px);
+    }
+    .quiz-option-btn.correct {
+      background: var(--highlighter-green) !important;
+      border-color: #166534 !important;
+      font-weight: 700;
+    }
+    .quiz-option-btn.incorrect {
+      background: #FFE4E4 !important;
+      border-color: var(--alert-red) !important;
+    }
+    .quiz-explanation-box {
+      margin-top: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      display: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .slide-card { padding: 1.5rem 1.25rem; }
+      .slide-title { font-size: 1.6rem; }
+      .deck-controls-bar { width: 95%; justify-content: space-between; gap: 0.5rem; }
+      .view-tabs span { display: none; }
+      .view-tabs svg { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================================================
+       GLOBAL APP HEADER
+       ========================================================================= -->
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="header-left">
+        <a href="/system_design" class="nav-portal-btn" title="Back to System Design Portal">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span>System Design Hub</span>
+        </a>
+
+        <a href="/" class="nav-portal-btn" style="background:#FFFFA5; color:#0E2A5C; border-color:#0E2A5C;" title="Go to Backend Curriculum">
+          <span>Backend Hub →</span>
+        </a>
+
+        <div class="chapter-badge-title">
+          <span class="chapter-text">CH 01 • Design a URL Shortener (Bitly)</span>
+        </div>
+      </div>
+
+      <!-- View Switcher -->
+      <nav class="view-tabs" aria-label="Learning View Selection">
+        <button class="view-tab-btn active" data-view="presentation" onclick="switchView('presentation')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Slides</span>
+        </button>
+        <button class="view-tab-btn" data-view="reader" onclick="switchView('reader')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>Textbook</span>
+        </button>
+        <button class="view-tab-btn" data-view="revision" onclick="switchView('revision')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Revision</span>
+        </button>
+        <button class="view-tab-btn" data-view="flashcards" onclick="switchView('flashcards')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          <span>Flashcards</span>
+        </button>
+        <button class="view-tab-btn" data-view="quiz" onclick="switchView('quiz')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Quiz</span>
+        </button>
+      </nav>
+
+      <!-- Productivity Tools (Drawers & Modals) -->
+      <div class="header-right">
+        <button id="headerBookmarkBtn" class="icon-action-btn" title="Toggle Slide Bookmark" onclick="toggleBookmarkCurrentSlide()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </button>
+        <button class="icon-action-btn" title="Open Global Search (or press /)" onclick="openSearchModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="icon-action-btn" title="Table of Contents" onclick="toggleDrawer('tocDrawer')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
+        <button class="icon-action-btn" title="Personal Study Notes" onclick="toggleDrawer('notesDrawer')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+
+      <!-- =====================================================================
+           VIEW 1: PRESENTATION (SLIDE DECK MODE - 22 SLIDES)
+           ===================================================================== -->
+      <section id="presentationView">
+
+        <!-- SLIDE 01: Introduction & The 5-Step Interview Framework -->
+        <article class="slide-wrapper active" data-slide-index="0" data-category="Framework">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 01 of 22</span>
+              <span class="slide-topic-tag">Masterclass Overview</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">The 5-Step System Design Interview Framework</h2>
+            <p class="slide-intro">
+              URL Shortener (like Bitly) is the most frequently asked system design interview question. In a standard 45-minute round, solving it randomly fails. You must navigate a systematic, time-boxed 5-step process.
+            </p>
+
+            <!-- Hand-Drawn SVG: 5-Step Framework -->
+            <div class="sketch-diagram-box">
+              <svg width="100%" height="160" viewBox="0 0 850 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Step 1 -->
+                <rect x="10" y="30" width="150" height="90" rx="8" stroke="#0E2A5C" stroke-width="2.5" fill="#FFFFA5" stroke-dasharray="2 1"/>
+                <text x="85" y="60" text-anchor="middle" font-family="Lexend" font-size="13" font-weight="700" fill="#0E2A5C">STEP 1 (10-15m)</text>
+                <text x="85" y="82" text-anchor="middle" font-family="Lexend" font-size="12" font-weight="600" fill="#333">Gather Requirements</text>
+                <text x="85" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#D12828">Functional + Non-Func</text>
+
+                <!-- Arrow 1 -->
+                <path d="M165 75 L185 75" stroke="#0E2A5C" stroke-width="2.5" marker-end="url(#arrowhead)"/>
+                
+                <!-- Step 2 -->
+                <rect x="190" y="30" width="130" height="90" rx="8" stroke="#0E2A5C" stroke-width="2.5" fill="#FFFFFF"/>
+                <text x="255" y="60" text-anchor="middle" font-family="Lexend" font-size="13" font-weight="700" fill="#0E2A5C">STEP 2</text>
+                <text x="255" y="82" text-anchor="middle" font-family="Lexend" font-size="12" font-weight="600" fill="#333">Core Entities</text>
+                <text x="255" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#0000FF">Short, Long, User</text>
+
+                <!-- Arrow 2 -->
+                <path d="M325 75 L345 75" stroke="#0E2A5C" stroke-width="2.5"/>
+
+                <!-- Step 3 -->
+                <rect x="350" y="30" width="130" height="90" rx="8" stroke="#0E2A5C" stroke-width="2.5" fill="#FFFFFF"/>
+                <text x="415" y="60" text-anchor="middle" font-family="Lexend" font-size="13" font-weight="700" fill="#0E2A5C">STEP 3</text>
+                <text x="415" y="82" text-anchor="middle" font-family="Lexend" font-size="12" font-weight="600" fill="#333">API Creation</text>
+                <text x="415" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#D12828">POST &amp; GET endpoints</text>
+
+                <!-- Arrow 3 -->
+                <path d="M485 75 L505 75" stroke="#0E2A5C" stroke-width="2.5"/>
+
+                <!-- Step 4 -->
+                <rect x="510" y="30" width="140" height="90" rx="8" stroke="#0E2A5C" stroke-width="2.5" fill="#FFFFFF"/>
+                <text x="580" y="60" text-anchor="middle" font-family="Lexend" font-size="13" font-weight="700" fill="#0E2A5C">STEP 4</text>
+                <text x="580" y="82" text-anchor="middle" font-family="Lexend" font-size="12" font-weight="600" fill="#333">High-Level Design</text>
+                <text x="580" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#15803d">Client • App • DB</text>
+
+                <!-- Arrow 4 -->
+                <path d="M655 75 L675 75" stroke="#0E2A5C" stroke-width="2.5"/>
+
+                <!-- Step 5 -->
+                <rect x="680" y="30" width="160" height="90" rx="8" stroke="#D12828" stroke-width="3" fill="#FFFFA5"/>
+                <text x="760" y="60" text-anchor="middle" font-family="Lexend" font-size="13" font-weight="800" fill="#D12828">STEP 5 (CORE MEAT)</text>
+                <text x="760" y="82" text-anchor="middle" font-family="Lexend" font-size="12" font-weight="600" fill="#333">Low-Level Design</text>
+                <text x="760" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#0E2A5C">ZK + Snowflake + TTL</text>
+              </svg>
+              <div class="diagram-caption">FIGURE 1.1: Chronological 5-step roadmap followed throughout this masterclass.</div>
+            </div>
+
+            <div class="content-grid-2">
+              <div class="card card-blue">
+                <div class="card-title">⏱️ The 45-Minute Interview Rule</div>
+                <p>
+                  Never jump immediately into drawing database boxes or caches! Spend the first <strong>10 to 15 minutes</strong> clarifying requirements, calculating scale, choosing CAP theorem priorities, and defining REST contracts. If you skip step 1, you will design the wrong architecture.
+                </p>
+              </div>
+
+              <div class="card card-yellow">
+                <div class="card-title">🏆 What Sets Apart Senior Engineers</div>
+                <p>
+                  Most candidates recite naive algorithms (random numbers or MD5 truncation). In this masterclass, we explore <strong>3 progressive approaches</strong>, exposing why each fails, leading to Bunny's robust <strong>Hybrid Architecture</strong>: Apache ZooKeeper + 64-bit Snowflake IDs.
+                </p>
+              </div>
+            </div>
+
+            <div class="sticky-note-callout">
+              <p><strong>Senior Interviewer Insight:</strong> "System design is not about guessing the 'one true architecture'. It is a demonstration of how you systematically identify bottlenecks, evaluate trade-offs, and reach a resilient solution."</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 02: Problem Statement (What is Bitly?) -->
+        <article class="slide-wrapper" data-slide-index="1" data-category="Problem Statement">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 02 of 22</span>
+              <span class="slide-topic-tag">Problem Anatomy</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Problem Statement: Designing a URL Shortener Like Bitly</h2>
+            <p class="slide-intro">
+              A URL shortener accepts an arbitrary long URL and produces an extremely compact 5-to-7 character alias. When a user requests the short alias, the service must reliably redirect them back to the original long destination.
+            </p>
+
+            <!-- 1:1 Mapping Visual -->
+            <div class="sketch-diagram-box">
+              <div style="width: 100%; display: flex; flex-direction: column; gap: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;">
+                <div style="background: #F4F1EA; border: 2px solid var(--ink-blue); padding: 0.85rem; border-radius: 8px;">
+                  <strong style="color: var(--ink-blue);">Original Long URL:</strong><br>
+                  <span style="color: #444; word-break: break-all;">https://www.facebook.com/profile.php?id=1000928374659281&amp;ref=bookmarks&amp;source=feed</span>
+                </div>
+                <div style="text-align: center; font-weight: 800; color: var(--alert-red); font-size: 1.1rem;">
+                  ▼ 1-to-1 Bidirectional Mapping (Shortening Logic) ▼
+                </div>
+                <div style="background: var(--highlighter-yellow); border: 2px solid var(--ink-blue); padding: 0.85rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <strong style="color: var(--ink-blue);">Compact Short URL:</strong><br>
+                    <span style="font-weight: 800; color: var(--alert-red); font-size: 1.1rem;">https://bit.ly/x9R2pM</span>
+                  </div>
+                  <div style="font-size: 0.8rem; background: #FFF; padding: 0.3rem 0.6rem; border: 1.5px solid var(--ink-blue); border-radius: 4px;">
+                    Domain: <span style="color: var(--ink-blue); font-weight: 700;">bit.ly/</span> + Token: <span style="color: var(--alert-red); font-weight: 700;">x9R2pM</span>
+                  </div>
+                </div>
+              </div>
+              <div class="diagram-caption">FIGURE 2.1: Domain prefix remains constant; only the 6-character unique identifier changes.</div>
+            </div>
+
+            <div class="content-grid-2">
+              <div class="card card-white">
+                <div class="card-title">🎯 The Core Mechanical Objective</div>
+                <p>
+                  The system acts as a high-speed, distributed dictionary. It must store a bi-directional mapping between <code>short_code</code> and <code>long_url</code>. The domain name (e.g., <code>bit.ly/</code> or <code>tiny.notes/</code>) never changes—only the token path is generated by our backend.
+                </p>
+              </div>
+
+              <div class="card card-white">
+                <div class="card-title">🔍 The Interviewer's Trap</div>
+                <p>
+                  Interviewers intentionally start with: <em>"Design Bitly."</em> This is deliberately vague! They are waiting to see if you ask clarifying questions about traffic scale, expiration policies, custom aliases, and whether the service needs strict ACID banking-level consistency.
+                </p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 03: Step 1 - Functional Requirements -->
+        <article class="slide-wrapper" data-slide-index="2" data-category="Requirements">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 03 of 22</span>
+              <span class="slide-topic-tag">Step 1: Scoping</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Step 1: Gathering Functional Requirements</h2>
+            <p class="slide-intro">
+              Functional requirements define the core behaviors of the application. In the lecture, Bunny categorizes these into <strong>2 core mandatory requirements</strong> and <strong>2 premium business extensions</strong>.
+            </p>
+
+            <div class="content-grid-2">
+              <!-- Mandatory -->
+              <div class="card card-green">
+                <div class="card-title">✅ Core Mandatory Requirements</div>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; font-size: 0.95rem;">
+                  <li>
+                    <strong>1. URL Shortening:</strong> Given any valid HTTP/HTTPS URL, generate and return an ultra-short unique alias of 5 to 7 characters.
+                  </li>
+                  <li>
+                    <strong>2. URL Redirection:</strong> When a client requests <code>https://bit.ly/{token}</code>, redirect their browser to the original destination in minimum latency.
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Premium Extensions -->
+              <div class="card card-yellow">
+                <div class="card-title">⭐ Premium Business Extensions</div>
+                <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; font-size: 0.95rem;">
+                  <li>
+                    <strong>3. Custom Vanity Aliases:</strong> Allow premium users to choose their own custom alias (e.g., <code>bit.ly/ASD</code> or <code>bit.ly/summer-sale</code>).
+                  </li>
+                  <li>
+                    <strong>4. Expiration Date (TTL):</strong> Standard links expire after 90 days. Premium users can specify custom expiration dates or permanent links.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="sketch-diagram-box">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; width: 100%;">
+                <div style="border-bottom: 2px dashed var(--ink-blue); padding-bottom: 0.5rem; margin-bottom: 0.5rem; font-weight: 700; color: var(--ink-blue);">
+                  REQUIREMENTS CHECKLIST TABLE:
+                </div>
+                <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                  <tr style="border-bottom: 1px solid #ccc;">
+                    <th style="padding: 0.4rem;">Requirement</th>
+                    <th style="padding: 0.4rem;">Type</th>
+                    <th style="padding: 0.4rem;">Access Level</th>
+                    <th style="padding: 0.4rem;">Default Behavior</th>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 0.4rem;">Shorten Long URL</td>
+                    <td style="padding: 0.4rem; color: #166534; font-weight: 700;">Functional</td>
+                    <td style="padding: 0.4rem;">All Users (Public)</td>
+                    <td style="padding: 0.4rem;">Auto-generated 6-char token</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 0.4rem;">HTTP Redirection</td>
+                    <td style="padding: 0.4rem; color: #166534; font-weight: 700;">Functional</td>
+                    <td style="padding: 0.4rem;">All Users (Public)</td>
+                    <td style="padding: 0.4rem;">HTTP 301 / 302 Redirection</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 0.4rem;">Custom Vanity Alias</td>
+                    <td style="padding: 0.4rem; color: var(--alert-red); font-weight: 700;">Extension</td>
+                    <td style="padding: 0.4rem;">Premium Users</td>
+                    <td style="padding: 0.4rem;">Check DB uniqueness; reject if taken</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 0.4rem;">Custom Expiry (TTL)</td>
+                    <td style="padding: 0.4rem; color: var(--alert-red); font-weight: 700;">Extension</td>
+                    <td style="padding: 0.4rem;">Premium Users</td>
+                    <td style="padding: 0.4rem;">Default: 90 days expiration</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 04: Step 1 - Non-Functional Requirements & Quantitative SLAs -->
+        <article class="slide-wrapper" data-slide-index="3" data-category="Requirements">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 04 of 22</span>
+              <span class="slide-topic-tag">Step 1: Quantifying SLAs</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Step 1: Non-Functional Requirements &amp; Scale Numbers</h2>
+            <p class="slide-intro">
+              Never just write "high availability" or "low latency". As Bunny emphasizes, you MUST <strong>quantify every non-functional requirement</strong> with concrete numerical targets to guide hardware and database selection.
+            </p>
+
+            <div class="content-grid-3">
+              <div class="card card-white">
+                <div class="card-title">⚡ Latency Budget</div>
+                <div style="font-size: 1.8rem; font-weight: 800; color: var(--alert-red); font-family: 'JetBrains Mono'; margin: 0.4rem 0;">&lt; 200 ms</div>
+                <p style="font-size: 0.88rem;">
+                  Explicitly specify where latency applies: <strong>both on URL creation AND on redirection</strong>. A redirect must complete in sub-200ms.
+                </p>
+              </div>
+
+              <div class="card card-white">
+                <div class="card-title">📈 System Scale</div>
+                <div style="font-size: 1.8rem; font-weight: 800; color: var(--ink-blue); font-family: 'JetBrains Mono'; margin: 0.4rem 0;">100M DAU</div>
+                <p style="font-size: 0.88rem;">
+                  100 Million Daily Active Users generating over <strong>1 Billion long-form URLs</strong>. This scale rules out single-server monoliths.
+                </p>
+              </div>
+
+              <div class="card card-white">
+                <div class="card-title">🔒 100% Uniqueness</div>
+                <div style="font-size: 1.8rem; font-weight: 800; color: #166534; font-family: 'JetBrains Mono'; margin: 0.4rem 0;">0 Collisions</div>
+                <p style="font-size: 0.88rem;">
+                  Every generated short alias must map to exactly one long URL. No two users must ever receive the same short link.
+                </p>
+              </div>
+            </div>
+
+            <div class="card card-yellow" style="margin-top: 1rem;">
+              <div class="card-title">💡 Why Scale Numbers Change Architectural Decisions</div>
+              <p>
+                If the interviewer specifies 10,000 URLs total, a simple relational SQLite table with MD5 hashing and a while-loop collision check is sufficient. But for <strong>1 Billion URLs and 100M DAU</strong>, DB collision loops will melt your database and spike latency. Scale numbers dictate the design.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 05: CAP Theorem & Consistency vs Availability -->
+        <article class="slide-wrapper" data-slide-index="4" data-category="CAP Theorem">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 05 of 22</span>
+              <span class="slide-topic-tag">Distributed Systems</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">The CAP Theorem: Why Availability Trumps Consistency</h2>
+            <p class="slide-intro">
+              Since 100M DAU requires a distributed microservice cluster, the <strong>CAP Theorem</strong> dictates that under network partition, we must choose between <strong>Consistency (CP)</strong> or <strong>Availability (AP)</strong>.
+            </p>
+
+            <div class="content-grid-2">
+              <div class="card card-red">
+                <div class="card-title">🏦 When is Strong Consistency (CP) Required?</div>
+                <p style="font-size: 0.92rem;">
+                  Banking accounts, payment gateways, and airline seat reservation systems demand strict <strong>Read-After-Write Consistency</strong>. If Seat 14A is booked at 12:00:00.000, no second user can book it at 12:00:00.001. A delay causes severe business failure.
+                </p>
+              </div>
+
+              <div class="card card-green">
+                <div class="card-title">🌐 Why URL Shorteners Choose High Availability (AP)</div>
+                <p style="font-size: 0.92rem;">
+                  If Bitly is down or unreachable, users immediately abandon the service. However, when a user creates a short link, it takes them several seconds to copy and paste it into an email or WhatsApp! We do <em>not</em> need sub-millisecond atomic consistency across all replica nodes.
+                </p>
+              </div>
+            </div>
+
+            <div class="sketch-diagram-box">
+              <svg width="100%" height="140" viewBox="0 0 700 130" fill="none">
+                <circle cx="200" cy="65" r="50" stroke="#0E2A5C" stroke-width="2.5" fill="#FFFFA5" stroke-dasharray="4 2"/>
+                <text x="200" y="70" text-anchor="middle" font-family="Lexend" font-size="14" font-weight="800" fill="#0E2A5C">AVAILABILITY (A)</text>
+
+                <circle cx="500" cy="65" r="50" stroke="#0E2A5C" stroke-width="2.5" fill="#FFF0F0"/>
+                <text x="500" y="70" text-anchor="middle" font-family="Lexend" font-size="14" font-weight="800" fill="#D12828">CONSISTENCY (C)</text>
+
+                <path d="M260 65 L440 65" stroke="#0E2A5C" stroke-width="3" marker-end="url(#arrowhead)"/>
+                <rect x="290" y="45" width="120" height="40" rx="6" fill="#15803d" stroke="#0E2A5C" stroke-width="2"/>
+                <text x="350" y="70" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="700" fill="#FFF">PRIORITY: A &gt; C</text>
+              </svg>
+              <div class="diagram-caption">FIGURE 5.1: Eventual Consistency is acceptable; 200ms propagation delay to replica nodes causes zero user friction.</div>
+            </div>
+
+            <div class="sticky-note-callout">
+              <p><strong>Bunny's Rule:</strong> "We design an <strong>eventually consistent, highly available system</strong>. The system must never reject traffic or throw a 500 server error."</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 06: Step 2 - Core Entities -->
+        <article class="slide-wrapper" data-slide-index="5" data-category="Entities">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 06 of 22</span>
+              <span class="slide-topic-tag">Step 2: Data Modeling</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Step 2: Identifying the Core System Entities</h2>
+            <p class="slide-intro">
+              Because a URL shortener is conceptually lightweight, there are only <strong>three core entities</strong> involved in the entire lifecycle. Identifying them upfront makes high-level design and schema definition straightforward.
+            </p>
+
+            <div class="content-grid-3">
+              <div class="card card-white" style="border-top: 4px solid var(--alert-red);">
+                <div class="card-title">1. Short URL Entity</div>
+                <ul style="font-size: 0.88rem; list-style: disc; padding-left: 1.25rem; line-height: 1.6;">
+                  <li><code>short_code</code> (Unique 6-7 char token)</li>
+                  <li><code>created_at</code> timestamp</li>
+                  <li><code>expires_at</code> timestamp</li>
+                  <li><code>is_custom</code> boolean</li>
+                </ul>
+              </div>
+
+              <div class="card card-white" style="border-top: 4px solid var(--ink-blue);">
+                <div class="card-title">2. Long URL Entity</div>
+                <ul style="font-size: 0.88rem; list-style: disc; padding-left: 1.25rem; line-height: 1.6;">
+                  <li><code>original_url</code> (Full destination string)</li>
+                  <li>Protocol (<code>http://</code> or <code>https://</code>)</li>
+                  <li>Sanitized target format</li>
+                  <li>Payload size up to 2,048 bytes</li>
+                </ul>
+              </div>
+
+              <div class="card card-white" style="border-top: 4px solid #166534;">
+                <div class="card-title">3. User Metadata Entity</div>
+                <ul style="font-size: 0.88rem; list-style: disc; padding-left: 1.25rem; line-height: 1.6;">
+                  <li><code>user_id</code> (Unique ID)</li>
+                  <li><code>account_tier</code> (Free vs Premium)</li>
+                  <li>Created links list</li>
+                  <li>Rate limit quota usage</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="card card-yellow" style="margin-top: 1rem;">
+              <div class="card-title">💡 Entity Cardinality</div>
+              <p>
+                One <code>User</code> can own zero to many <code>Short URLs</code> (1-to-N). Each <code>Short URL</code> maps to exactly one <code>Long URL</code> (1-to-1). Multiple users can shorten the same destination, but each gets their own unique short alias if analytics isolation is desired.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 07: Step 3 - RESTful API Creation -->
+        <article class="slide-wrapper" data-slide-index="6" data-category="APIs">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 07 of 22</span>
+              <span class="slide-topic-tag">Step 3: Interface Contracts</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Step 3: Defining the REST API Endpoints</h2>
+            <p class="slide-intro">
+              With functional requirements and entities defined, API design is a direct 1-to-1 mapping. We need exactly two primary REST endpoints: one to create short links, and one to resolve them.
+            </p>
+
+            <div class="code-comparison-container">
+              <!-- Endpoint 1 -->
+              <div class="code-panel">
+                <div class="code-header success">
+                  <span>POST /api/v1/urls</span>
+                  <span style="font-family:'JetBrains Mono'; font-size:0.75rem;">Create Short URL</span>
+                </div>
+                <pre class="sketch-code"><code>POST /api/v1/urls HTTP/1.1
+Host: bit.ly
+Content-Type: application/json
+
+{
+  "long_url": "https://facebook.com/profile...",
+  "custom_alias": "ASD",       // Optional (Premium)
+  "expires_at": "2026-12-31"   // Optional (Premium)
+}
+
+// Response (HTTP 201 Created):
+{
+  "short_url": "https://bit.ly/ASD",
+  "long_url": "https://facebook.com/profile...",
+  "created_at": "2026-10-19T10:00:00Z",
+  "expires_at": "2026-12-31T23:59:59Z"
+}</code></pre>
+              </div>
+
+              <!-- Endpoint 2 -->
+              <div class="code-panel">
+                <div class="code-header">
+                  <span>GET /{short_url}</span>
+                  <span style="font-family:'JetBrains Mono'; font-size:0.75rem;">Redirect Handler</span>
+                </div>
+                <pre class="sketch-code"><code>GET /ASD HTTP/1.1
+Host: bit.ly
+User-Agent: Mozilla/5.0...
+
+// Response (HTTP 301 / 302 Redirect):
+HTTP/1.1 302 Found
+Location: https://facebook.com/profile...
+Cache-Control: no-cache, no-store
+Date: Mon, 19 Oct 2026 10:00:01 GMT</code></pre>
+              </div>
+            </div>
+
+            <div class="sticky-note-callout">
+              <p><strong>REST Design Rule:</strong> The redirect endpoint does not return a JSON body to browser clients; it returns an HTTP status code <code>301 Moved Permanently</code> or <code>302 Found</code> with the <code>Location</code> header set to the destination URL.</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 08: Step 4 - High-Level Design (HLD) -->
+        <article class="slide-wrapper" data-slide-index="7" data-category="HLD">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 08 of 22</span>
+              <span class="slide-topic-tag">Step 4: Architecture Blocks</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Step 4: High-Level Design (HLD) Architecture</h2>
+            <p class="slide-intro">
+              Before getting bogged down in low-level libraries, we draw the abstract 30,000-foot component flow: Client, Backend Server, and Database, mapping out both read and write request cycles.
+            </p>
+
+            <!-- HLD Diagram -->
+            <div class="sketch-diagram-box">
+              <svg width="100%" height="220" viewBox="0 0 780 200" fill="none">
+                <!-- Client Box -->
+                <rect x="20" y="50" width="140" height="100" rx="8" stroke="#0E2A5C" stroke-width="2.5" fill="#FFFFA5"/>
+                <text x="90" y="90" text-anchor="middle" font-family="Lexend" font-size="14" font-weight="800" fill="#0E2A5C">CLIENT</text>
+                <text x="90" y="115" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#333">Browser / App</text>
+
+                <!-- Flow 1: Generate URL -->
+                <path d="M165 75 L315 75" stroke="#D12828" stroke-width="2.5" marker-end="url(#arrowhead)"/>
+                <text x="240" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#D12828">1. POST long_url</text>
+
+                <!-- Flow 2: Return Short URL -->
+                <path d="M315 95 L165 95" stroke="#166534" stroke-width="2" stroke-dasharray="3 3"/>
+                <text x="240" y="112" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#166534">2. short_url</text>
+
+                <!-- App Server Box -->
+                <rect x="320" y="30" width="170" height="140" rx="10" stroke="#0E2A5C" stroke-width="3" fill="#FFFFFF"/>
+                <text x="405" y="70" text-anchor="middle" font-family="Lexend" font-size="14" font-weight="800" fill="#0E2A5C">BACKEND SERVER</text>
+                <text x="405" y="95" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444">• URL Generator</text>
+                <text x="405" y="115" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444">• Redirection Engine</text>
+                <text x="405" y="135" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#444">• DB Persistence</text>
+
+                <!-- Flow 3: DB Save -->
+                <path d="M495 75 L625 75" stroke="#0E2A5C" stroke-width="2.5"/>
+                <text x="560" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#0E2A5C">3. Save mapping</text>
+
+                <!-- Flow 4: DB Lookup -->
+                <path d="M625 95 L495 95" stroke="#0000FF" stroke-width="2" stroke-dasharray="3 3"/>
+                <text x="560" y="112" text-anchor="middle" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#0000FF">4. Fetch long_url</text>
+
+                <!-- Database Box -->
+                <rect x="630" y="45" width="130" height="110" rx="8" stroke="#0E2A5C" stroke-width="2.5" fill="#F4F1EA"/>
+                <text x="695" y="85" text-anchor="middle" font-family="Lexend" font-size="14" font-weight="800" fill="#0E2A5C">DATABASE</text>
+                <text x="695" y="110" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#333">• URLs Table</text>
+                <text x="695" y="130" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#333">• Users Table</text>
+              </svg>
+              <div class="diagram-caption">FIGURE 8.1: High-Level Design abstract data flow for URL creation and resolution.</div>
+            </div>
+
+            <div class="content-grid-2">
+              <div class="card card-white">
+                <div class="card-title">📝 Write Path (URL Shortening)</div>
+                <p style="font-size: 0.9rem;">
+                  1. Client calls <code>POST /api/v1/urls</code> with <code>long_url</code>.<br>
+                  2. Backend server generates a unique short token.<br>
+                  3. Server saves <code>(short_url, long_url)</code> mapping in database.<br>
+                  4. Returns compact short URL back to client.
+                </p>
+              </div>
+
+              <div class="card card-white">
+                <div class="card-title">⚡ Read Path (URL Redirection)</div>
+                <p style="font-size: 0.9rem;">
+                  1. Client enters <code>bit.ly/token</code> in browser address bar.<br>
+                  2. Backend server queries database for matching <code>short_url</code>.<br>
+                  3. If found, returns HTTP 301/302 with <code>Location: long_url</code>.<br>
+                  4. Browser automatically navigates user to the destination.
+                </p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 09: Database Schema Design & Indexing -->
+        <article class="slide-wrapper" data-slide-index="8" data-category="Database">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 09 of 22</span>
+              <span class="slide-topic-tag">Schema Architecture</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Database Schema Design &amp; Indexing Strategy</h2>
+            <p class="slide-intro">
+              We do not need a complex schema with 20 tables. We need exactly two relational tables: <code>users</code> and <code>urls</code>, with a mandatory <strong>B-Tree Unique Index on `short_url`</strong>.
+            </p>
+
+            <div class="content-grid-2">
+              <!-- URLs Table -->
+              <div class="code-panel">
+                <div class="code-header">
+                  <span>TABLE: urls</span>
+                  <span style="color:var(--alert-red); font-weight:700;">Critical Mapping</span>
+                </div>
+                <pre class="sketch-code"><code>CREATE TABLE urls (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  short_url VARCHAR(7) NOT NULL,
+  long_url VARCHAR(2048) NOT NULL,
+  user_id BIGINT,
+  custom_url VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  expires_at TIMESTAMP NULL,
+  
+  -- MANDATORY PRIMARY LOOKUP INDEX
+  CONSTRAINT uq_short_url UNIQUE (short_url)
+);
+
+CREATE INDEX idx_user_id ON urls(user_id);</code></pre>
+              </div>
+
+              <!-- Users Table -->
+              <div class="code-panel">
+                <div class="code-header">
+                  <span>TABLE: users</span>
+                  <span>Metadata &amp; Tier</span>
+                </div>
+                <pre class="sketch-code"><code>CREATE TABLE users (
+  user_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  is_premium BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Why PostgreSQL / MySQL?
+-- 1. Simple key-value mapping structure
+-- 2. Strict unique constraints on short_url
+-- 3. Mature B-Tree indexing for O(log N) lookups</code></pre>
+              </div>
+            </div>
+
+            <div class="sticky-note-callout">
+              <p><strong>Crucial Indexing Rule:</strong> Every incoming redirect issues <code>SELECT long_url FROM urls WHERE short_url = ?</code>. Without a B-Tree index on <code>short_url</code>, the database must perform a full-table scan across 1 Billion rows, causing a query timeout!</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 10: Step 5 - Low-Level Design (LLD): The Solution Space -->
+        <article class="slide-wrapper" data-slide-index="9" data-category="LLD">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 10 of 22</span>
+              <span class="slide-topic-tag">Step 5: The Core Meat</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Step 5: Low-Level Design &amp; The 3-Approach Evolution</h2>
+            <p class="slide-intro">
+              This is where 90% of candidates fail or win the interview. How does the server actually generate a 6-character short URL without collisions at 1 Billion scale? We analyze the <strong>3 classic approaches</strong> in order.
+            </p>
+
+            <div class="content-grid-3">
+              <!-- Approach 1 -->
+              <div class="card card-red">
+                <div class="card-title">❌ Approach 1</div>
+                <h4 style="font-weight: 700; color: #111; margin-bottom: 0.5rem;">MD5 / SHA-1 Hashing</h4>
+                <p style="font-size: 0.85rem; color: #444;">
+                  Hash <code>long_url</code> with MD5/SHA-1, crop the first 6 characters, and loop query the DB to resolve collisions.
+                </p>
+                <div style="margin-top: 0.75rem; font-weight: 800; font-size: 0.75rem; color: var(--alert-red);">FAILS: Collision Cascades at Scale</div>
+              </div>
+
+              <!-- Approach 2 -->
+              <div class="card card-yellow">
+                <div class="card-title">⚠️ Approach 2</div>
+                <h4 style="font-weight: 700; color: #111; margin-bottom: 0.5rem;">Counter / Distributed Redis</h4>
+                <p style="font-size: 0.85rem; color: #444;">
+                  Increment an integer counter (1, 2, 3...). In microservices, local counters collide; a single Redis counter becomes a SPOF.
+                </p>
+                <div style="margin-top: 0.75rem; font-weight: 800; font-size: 0.75rem; color: #b45309;">FAILS: Single Point of Failure (SPOF)</div>
+              </div>
+
+              <!-- Approach 3 -->
+              <div class="card card-green">
+                <div class="card-title">✅ Approach 3 (Hybrid)</div>
+                <h4 style="font-weight: 700; color: #111; margin-bottom: 0.5rem;">ZooKeeper + Snowflake</h4>
+                <p style="font-size: 0.85rem; color: #444;">
+                  ZooKeeper registers workers on boot only. Each server creates 64-bit Snowflake IDs in-memory with zero network calls!
+                </p>
+                <div style="margin-top: 0.75rem; font-weight: 800; font-size: 0.75rem; color: #166534;">OPTIMAL: 100% Unique &amp; Bulletproof</div>
+              </div>
+            </div>
+
+            <div class="sticky-note-callout">
+              <p><strong>Bunny's Pedagogical Strategy:</strong> "Start with Approach 1, explain its exact latency numbers and failure points. Transition to Approach 2 to show scaling awareness. Then deliver the Hybrid ZooKeeper solution to guarantee an offer."</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 11: Approach 1 - MD5 / SHA-1 Hashing & The Truncation Flaw -->
+        <article class="slide-wrapper" data-slide-index="10" data-category="Approach 1">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 11 of 22</span>
+              <span class="slide-topic-tag">Approach 1: Hashing</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Approach 1: MD5/SHA-1 Hashing &amp; The Truncation Flaw</h2>
+            <p class="slide-intro">
+              The first instinct of most developers is to pass the long URL into an established hashing library like MD5 (128-bit) or SHA-1 (160-bit) and take the first 6 characters. Let's see why this breaks.
+            </p>
+
+            <div class="sketch-diagram-box">
+              <div style="font-family:'JetBrains Mono'; font-size:0.85rem; width:100%; display:flex; flex-direction:column; gap:0.6rem;">
+                <div style="background:#F4F1EA; padding:0.5rem; border:1px solid #ccc; border-radius:4px;">
+                  1. Input: <code>https://facebook.com/user1</code> ──▶ MD5: <code>9191c0a4b7f8e3d2...</code> (32 hex characters)
+                </div>
+                <div style="background:#F4F1EA; padding:0.5rem; border:1px solid #ccc; border-radius:4px;">
+                  2. Input: <code>https://amazon.com/product99</code> ──▶ MD5: <code>9191c088ef3a1b4c...</code> (32 hex characters)
+                </div>
+                <div style="background:#FFE4E4; border:2px solid var(--alert-red); padding:0.6rem; border-radius:4px; color:var(--alert-red); font-weight:700;">
+                  ⚡ Truncate to first 6 chars: Both become "9191c0"! ──▶ COLLISION COLLAPSE!
+                </div>
+              </div>
+              <div class="diagram-caption">FIGURE 11.1: Truncating a 32-character hash to 6 characters destroys uniqueness guarantees.</div>
+            </div>
+
+            <div class="content-grid-2">
+              <div class="card card-white">
+                <div class="card-title">⚠️ The Mathematical Dilemma</div>
+                <p style="font-size:0.9rem;">
+                  MD5 outputs a 32-character hexadecimal string. SHA-1 outputs 40 characters. If you return all 32 characters, the URL is not "shortened"—it defeats the user requirement! But if you crop it to 6 characters, you run head-first into the <strong>Birthday Paradox</strong>.
+                </p>
+              </div>
+
+              <div class="card card-red">
+                <div class="card-title">💥 Similar URLs Produce Identical Prefixes</div>
+                <p style="font-size:0.9rem;">
+                  When shortening millions of URLs with similar query parameters or paths, there is a non-trivial probability that two distinct URLs share the exact same first 6 characters, causing immediate primary key collision in the database.
+                </p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 12: Approach 1 Deep-Dive - The Collision Retry Cascade -->
+        <article class="slide-wrapper" data-slide-index="11" data-category="Approach 1">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 12 of 22</span>
+              <span class="slide-topic-tag">Latency Breakdown</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Approach 1 Failure: The Collision Retry Cascade</h2>
+            <p class="slide-intro">
+              To resolve collisions in Approach 1, the system must check the database before returning the key. In the lecture, Bunny breaks down the exact <strong>millisecond latency cost</strong> of this retry loop.
+            </p>
+
+            <!-- Latency Flow Diagram -->
+            <div class="sketch-diagram-box">
+              <svg width="100%" height="150" viewBox="0 0 750 140" fill="none">
+                <!-- Attempt 1 -->
+                <rect x="20" y="20" width="340" height="100" rx="6" stroke="#0E2A5C" stroke-width="2" fill="#FFFFFF"/>
+                <text x="35" y="45" font-family="Lexend" font-size="12" font-weight="700" fill="#0E2A5C">ATTEMPT 1 (No Collision): 16ms</text>
+                <text x="35" y="70" font-family="JetBrains Mono" font-size="11" fill="#444">• MD5 Compute: 1ms</text>
+                <text x="35" y="90" font-family="JetBrains Mono" font-size="11" fill="#444">• DB Uniqueness Scan: 10ms</text>
+                <text x="35" y="110" font-family="JetBrains Mono" font-size="11" fill="#166534">• DB Insert &amp; Return: 5ms ──▶ Total: 16ms (OK)</text>
+
+                <!-- Attempt 2 -->
+                <rect x="390" y="20" width="340" height="100" rx="6" stroke="#D12828" stroke-width="2.5" fill="#FFF0F0"/>
+                <text x="405" y="45" font-family="Lexend" font-size="12" font-weight="700" fill="#D12828">ATTEMPT 2 (1 Collision): 32ms</text>
+                <text x="405" y="70" font-family="JetBrains Mono" font-size="11" fill="#444">• Attempt 1 Failed: 16ms consumed</text>
+                <text x="405" y="90" font-family="JetBrains Mono" font-size="11" fill="#444">• Append salt, re-hash, re-scan DB: +16ms</text>
+                <text x="405" y="110" font-family="JetBrains Mono" font-size="11" fill="#D12828">🔥 Total: 32ms (With 5 retries = 96ms!)</text>
+              </svg>
+              <div class="diagram-caption">FIGURE 12.1: DB lookup latency compounds linearly with every collision retry.</div>
+            </div>
+
+            <div class="content-grid-2">
+              <div class="card card-red">
+                <div class="card-title">💣 What Happens at 1 Billion URLs?</div>
+                <p style="font-size:0.9rem;">
+                  As the database fills with hundreds of millions of rows, the chance of hitting an existing 6-character token escalates exponentially. A user request may suffer 5 to 10 collision loops, pushing latency past <strong>150ms–200ms</strong>, directly violating our SLA!
+                </p>
+              </div>
+
+              <div class="card card-white">
+                <div class="card-title">📊 Final Verdict on Approach 1</div>
+                <p style="font-size:0.9rem;">
+                  <strong>Where it works:</strong> Small internal tools with &lt; 100,000 URLs.<br>
+                  <strong>Where it fails:</strong> Production internet-scale systems. We cannot rely on blind hash truncation paired with blocking database collision scans.
+                </p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 13: Approach 2 - Counter-Based Auto-Increment -->
+        <article class="slide-wrapper" data-slide-index="12" data-category="Approach 2">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 13 of 22</span>
+              <span class="slide-topic-tag">Approach 2: Counters</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Approach 2: Counter-Based Generation &amp; Monolith Scaling Wall</h2>
+            <p class="slide-intro">
+              Instead of hashing unpredictable text strings, what if the server uses an <strong>auto-incrementing counter</strong> (1, 2, 3, 4...)? Each request gets a unique integer, dropping DB collision scans completely!
+            </p>
+
+            <div class="content-grid-2">
+              <div class="card card-green">
+                <div class="card-title">⚡ Why Counters Slash Latency to 6ms</div>
+                <p style="font-size:0.92rem;">
+                  Request 1 receives ID <code>1</code>. Request 2 receives ID <code>2</code>. Because numbers strictly increment, <strong>duplicates are mathematically impossible</strong>! We no longer need to execute a 10ms database scan. Latency drops from 16ms to just <strong>6ms</strong> (local increment + DB save).
+                </p>
+              </div>
+
+              <div class="card card-red">
+                <div class="card-title">🧱 The Monolith Scaling Wall</div>
+                <p style="font-size:0.92rem;">
+                  This single counter works flawlessly on a <em>single monolithic server</em>. But our non-functional requirement specifies <strong>100 Million DAU</strong>! A single machine cannot handle this throughput. We must scale horizontally with microservices.
+                </p>
+              </div>
+            </div>
+
+            <div class="sketch-diagram-box">
+              <div style="font-family:'JetBrains Mono'; font-size:0.9rem; text-align:center;">
+                <span style="background:#FFFFA5; padding:0.4rem 0.8rem; border:2px solid var(--ink-blue); border-radius:4px; font-weight:700;">
+                  Vertical Scaling (Bigger RAM/CPU) ❌ DOES NOT SCALE TO 100M USERS
+                </span>
+                <div style="margin: 0.5rem 0; font-weight:800; color:var(--alert-red);">▼ MUST USE HORIZONTAL MICROSERVICE REPLICATION ▼</div>
+                <span style="background:#FFF; padding:0.4rem 0.8rem; border:2px solid var(--ink-blue); border-radius:4px; font-weight:700;">
+                  Horizontal Scaling (Multiple App Servers behind Load Balancer)
+                </span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 14: Approach 2 Deep-Dive - Local Counter Collision -->
+        <article class="slide-wrapper" data-slide-index="13" data-category="Approach 2">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 14 of 22</span>
+              <span class="slide-topic-tag">Concurrency Failure</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Approach 2 Flaw: Load Balancers &amp; Local Counter Collisions</h2>
+            <p class="slide-intro">
+              When we deploy multiple server instances (Server 1, Server 2, Server 3) behind a Round-Robin Load Balancer, a catastrophic concurrency bug appears: <strong>each server maintains its own local counter</strong>.
+            </p>
+
+            <!-- Load Balancer Collision Diagram -->
+            <div class="sketch-diagram-box">
+              <svg width="100%" height="220" viewBox="0 0 760 210" fill="none">
+                <!-- LB -->
+                <rect x="30" y="60" width="130" height="90" rx="8" stroke="#0E2A5C" stroke-width="2.5" fill="#FFFFA5"/>
+                <text x="95" y="95" text-anchor="middle" font-family="Lexend" font-size="12" font-weight="800" fill="#0E2A5C">LOAD BALANCER</text>
+                <text x="95" y="115" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#D12828">Round Robin</text>
+
+                <!-- Arrows to servers -->
+                <path d="M165 75 L285 45" stroke="#0E2A5C" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <path d="M165 105 L285 105" stroke="#0E2A5C" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <path d="M165 135 L285 165" stroke="#0E2A5C" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Server 1 -->
+                <rect x="290" y="20" width="180" height="50" rx="6" stroke="#0E2A5C" stroke-width="2" fill="#FFFFFF"/>
+                <text x="380" y="40" text-anchor="middle" font-family="Lexend" font-size="11" font-weight="700">SERVER 1 (counter=0)</text>
+                <text x="380" y="58" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#166534">Returns ID = 0</text>
+
+                <!-- Server 2 -->
+                <rect x="290" y="80" width="180" height="50" rx="6" stroke="#D12828" stroke-width="2.5" fill="#FFE4E4"/>
+                <text x="380" y="100" text-anchor="middle" font-family="Lexend" font-size="11" font-weight="700" fill="#D12828">SERVER 2 (counter=0)</text>
+                <text x="380" y="118" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#D12828">Returns ID = 0 (COLLISION!)</text>
+
+                <!-- Server 3 -->
+                <rect x="290" y="140" width="180" height="50" rx="6" stroke="#0E2A5C" stroke-width="2" fill="#FFFFFF"/>
+                <text x="380" y="160" text-anchor="middle" font-family="Lexend" font-size="11" font-weight="700">SERVER 3 (counter=0)</text>
+                <text x="380" y="178" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#444">Returns ID = 0</text>
+
+                <!-- Arrows to DB -->
+                <path d="M475 45 L590 85" stroke="#0E2A5C" stroke-width="2"/>
+                <path d="M475 105 L590 105" stroke="#D12828" stroke-width="2.5"/>
+                <path d="M475 165 L590 125" stroke="#0E2A5C" stroke-width="2"/>
+
+                <!-- DB -->
+                <rect x="595" y="65" width="140" height="80" rx="8" stroke="#D12828" stroke-width="2.5" fill="#FFF0F0"/>
+                <text x="665" y="100" text-anchor="middle" font-family="Lexend" font-size="12" font-weight="800" fill="#D12828">DATABASE</text>
+                <text x="665" y="120" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#D12828">💥 Duplicate Key Error</text>
+              </svg>
+              <div class="diagram-caption">FIGURE 14.1: When servers boot independently, their counters start at 0 and overwrite each other's keys.</div>
+            </div>
+
+            <div class="sticky-note-callout">
+              <p><strong>The Failure:</strong> Server 1 gets request 1 and returns <code>0</code>. Server 2 gets request 2 and also returns <code>0</code>! The database crashes with a duplicate key violation. Local counters cannot exist in distributed systems.</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 15: Approach 2.5 - Centralized Redis & Single Point of Failure (SPOF) -->
+        <article class="slide-wrapper" data-slide-index="14" data-category="Approach 2">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 15 of 22</span>
+              <span class="slide-topic-tag">Centralized Cache</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Approach 2.5: Centralized Redis Counter &amp; SPOF Risk</h2>
+            <p class="slide-intro">
+              To fix local counter collisions, developers introduce a central Redis cache. Because Redis is single-threaded, <code>INCR counter</code> provides atomic increments in 2–3ms. But this creates a dangerous <strong>Single Point of Failure</strong>.
+            </p>
+
+            <div class="content-grid-2">
+              <div class="card card-green">
+                <div class="card-title">✅ The Redis Counter Advantage</div>
+                <p style="font-size:0.9rem;">
+                  All app servers consult one central Redis instance via atomic <code>INCR url_counter</code>. No local counters collide. Latency is only <strong>2ms to 3ms</strong>. For medium-scale systems, this solves the collision problem.
+                </p>
+              </div>
+
+              <div class="card card-red">
+                <div class="card-title">💥 Single Point of Failure (SPOF)</div>
+                <p style="font-size:0.9rem;">
+                  If the Redis instance crashes or experiences network isolation, <strong>the entire URL shortening service halts</strong>! If you deploy a multi-node Redis Cluster, synchronizing distributed counters across nodes recreates the exact split-brain duplicate problem we tried to avoid.
+                </p>
+              </div>
+            </div>
+
+            <div class="sketch-diagram-box">
+              <div style="font-family:'JetBrains Mono'; font-size:0.85rem; width:100%; text-align:center;">
+                <div style="color:var(--alert-red); font-weight:800; font-size:1.1rem; margin-bottom:0.5rem;">
+                  🚨 THE ARCHITECTURAL DILEMMA:
+                </div>
+                <div style="background:#FFF0F0; border:2px dashed var(--alert-red); padding:1rem; border-radius:8px;">
+                  Single Redis Node ──▶ Single Point of Failure (SPOF)<br>
+                  Multi-node Redis Cluster ──▶ Cross-node counter synchronization race conditions &amp; duplicates!<br>
+                  <strong>How can we generate unique IDs locally with ZERO external network calls?</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 16: Understanding Apache ZooKeeper - Distributed Coordination -->
+        <article class="slide-wrapper" data-slide-index="15" data-category="ZooKeeper">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 16 of 22</span>
+              <span class="slide-topic-tag">Distributed Coordination</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Understanding Apache ZooKeeper: The Cluster Coordinator</h2>
+            <p class="slide-intro">
+              Before presenting the final hybrid solution, Bunny explains what <strong>Apache ZooKeeper</strong> actually is: a centralized, highly reliable coordination service that monitors distributed worker nodes like a parent.
+            </p>
+
+            <div class="content-grid-2">
+              <div class="card card-white">
+                <div class="card-title">🌲 Hierarchical ZNode Directory Tree</div>
+                <p style="font-size:0.9rem;">
+                  ZooKeeper stores configuration like a computer's directory tree. The root node has sub-folders for each registered service (e.g. <code>/url-shortener/worker-1</code>). Nodes store configuration metadata and state in memory.
+                </p>
+              </div>
+
+              <div class="card card-white">
+                <div class="card-title">💓 Persistent vs Ephemeral Nodes</div>
+                <p style="font-size:0.9rem;">
+                  <strong>Persistent Nodes:</strong> Never deleted automatically. Perfect for cluster counters and configuration.<br>
+                  <strong>Ephemeral Nodes:</strong> Tied to server heartbeat. If an app server crashes, ZooKeeper drops its ephemeral znode instantly.
+                </p>
+              </div>
+            </div>
+
+            <!-- ZooKeeper Tree Visual -->
+            <div class="sketch-diagram-box">
+              <svg width="100%" height="160" viewBox="0 0 700 150" fill="none">
+                <!-- Root -->
+                <circle cx="350" cy="30" r="22" stroke="#0E2A5C" stroke-width="2.5" fill="#FFFFA5"/>
+                <text x="350" y="35" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="800">/root</text>
+
+                <!-- Lines -->
+                <path d="M335 48 L200 90" stroke="#0E2A5C" stroke-width="2"/>
+                <path d="M365 48 L500 90" stroke="#0E2A5C" stroke-width="2"/>
+
+                <!-- App 1 Znode (Persistent) -->
+                <rect x="120" y="90" width="160" height="50" rx="6" stroke="#0E2A5C" stroke-width="2" fill="#FFFFFF"/>
+                <text x="200" y="112" text-anchor="middle" font-family="Lexend" font-size="11" font-weight="700" fill="#0E2A5C">/config (Persistent)</text>
+                <text x="200" y="128" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#15803d">Counter Log Backup</text>
+
+                <!-- App 2 Znode (Ephemeral) -->
+                <rect x="420" y="90" width="160" height="50" rx="6" stroke="#D12828" stroke-width="2" stroke-dasharray="3 2" fill="#FFE4E4"/>
+                <text x="500" y="112" text-anchor="middle" font-family="Lexend" font-size="11" font-weight="700" fill="#D12828">/workers (Ephemeral)</text>
+                <text x="500" y="128" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#D12828">Heartbeat Monitored</text>
+              </svg>
+              <div class="diagram-caption">FIGURE 16.1: ZooKeeper's hierarchical tree structure managing persistent state and ephemeral heartbeats.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 17: Approach 3 - The Bunny Hybrid Solution: ZooKeeper Worker Assignment -->
+        <article class="slide-wrapper" data-slide-index="16" data-category="Approach 3">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 17 of 22</span>
+              <span class="slide-topic-tag">The Optimal Architecture</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Approach 3: The Hybrid ZooKeeper Solution</h2>
+            <p class="slide-intro">
+              Here is Bunny's bulletproof breakthrough: <strong>We do NOT call ZooKeeper on every request!</strong> We only consult ZooKeeper once when a server boots up to assign it a unique <code>worker_id</code>.
+            </p>
+
+            <div class="content-grid-2">
+              <div class="card card-green">
+                <div class="card-title">🚀 ZooKeeper Called ONCE on Boot Only</div>
+                <p style="font-size:0.9rem;">
+                  When Server 1 launches, it registers with ZooKeeper and receives <code>worker_id = 123</code>. Server 2 receives <code>worker_id = 234</code>. Server 3 receives <code>worker_id = 345</code>. During active runtime, <strong>zero network calls are made to ZooKeeper</strong>!
+                </p>
+              </div>
+
+              <div class="card card-white">
+                <div class="card-title">🛡️ What If ZooKeeper Crashes?</div>
+                <p style="font-size:0.9rem;">
+                  Even if ZooKeeper goes completely offline, all running application servers continue generating unique URLs smoothly without interruption! ZooKeeper is only needed when new server instances boot or scale up.
+                </p>
+              </div>
+            </div>
+
+            <div class="sketch-diagram-box">
+              <svg width="100%" height="160" viewBox="0 0 760 150" fill="none">
+                <!-- ZooKeeper Center -->
+                <rect x="290" y="15" width="180" height="50" rx="8" stroke="#0E2A5C" stroke-width="2.5" fill="#FFFFA5"/>
+                <text x="380" y="38" text-anchor="middle" font-family="Lexend" font-size="12" font-weight="800" fill="#0E2A5C">APACHE ZOOKEEPER</text>
+                <text x="380" y="52" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#D12828">Assigns Unique Worker IDs on Boot</text>
+
+                <!-- Arrows Down -->
+                <path d="M330 65 L170 100" stroke="#0E2A5C" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <path d="M380 65 L380 95" stroke="#0E2A5C" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <path d="M430 65 L590 100" stroke="#0E2A5C" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                <!-- Worker 1 -->
+                <rect x="80" y="100" width="180" height="40" rx="6" stroke="#0E2A5C" stroke-width="2" fill="#FFFFFF"/>
+                <text x="170" y="125" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700">Worker ID: 123</text>
+
+                <!-- Worker 2 -->
+                <rect x="290" y="100" width="180" height="40" rx="6" stroke="#0E2A5C" stroke-width="2" fill="#FFFFFF"/>
+                <text x="380" y="125" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700">Worker ID: 234</text>
+
+                <!-- Worker 3 -->
+                <rect x="500" y="100" width="180" height="40" rx="6" stroke="#0E2A5C" stroke-width="2" fill="#FFFFFF"/>
+                <text x="590" y="125" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700">Worker ID: 345</text>
+              </svg>
+              <div class="diagram-caption">FIGURE 17.1: ZooKeeper isolates coordination to boot-time worker allocation, removing runtime SPOF bottlenecks.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 18: The 64-Bit Snowflake ID Architecture -->
+        <article class="slide-wrapper" data-slide-index="17" data-category="Snowflake">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 18 of 22</span>
+              <span class="slide-topic-tag">Distributed ID Generation</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">The 64-Bit Snowflake ID Architecture</h2>
+            <p class="slide-intro">
+              With a unique <code>worker_id</code> assigned by ZooKeeper, each server generates a <strong>64-bit Snowflake ID</strong> entirely in-memory. Because time, machine ID, and local sequence counter are combined, uniqueness is 100% mathematically guaranteed.
+            </p>
+
+            <!-- 64-bit Layout Diagram -->
+            <div class="sketch-diagram-box">
+              <div style="width: 100%; overflow-x: auto;">
+                <svg width="780" height="120" viewBox="0 0 780 120" fill="none">
+                  <!-- Sign bit -->
+                  <rect x="10" y="30" width="45" height="60" fill="#EAE6DC" stroke="#0E2A5C" stroke-width="2"/>
+                  <text x="32" y="55" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700">1 bit</text>
+                  <text x="32" y="75" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#666">Sign</text>
+
+                  <!-- Timestamp -->
+                  <rect x="60" y="30" width="370" height="60" fill="#FFFFA5" stroke="#0E2A5C" stroke-width="2"/>
+                  <text x="245" y="55" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="800" fill="#0E2A5C">41 BITS: TIMESTAMP</text>
+                  <text x="245" y="75" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#444">Milliseconds since custom epoch (~69 years)</text>
+
+                  <!-- Worker ID -->
+                  <rect x="435" y="30" width="165" height="60" fill="#D4F8D4" stroke="#0E2A5C" stroke-width="2"/>
+                  <text x="517" y="55" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="800" fill="#15803d">10 BITS: WORKER ID</text>
+                  <text x="517" y="75" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#15803d">From ZooKeeper (1024 nodes)</text>
+
+                  <!-- Sequence Counter -->
+                  <rect x="605" y="30" width="165" height="60" fill="#FFE4E4" stroke="#0E2A5C" stroke-width="2"/>
+                  <text x="687" y="55" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="800" fill="#D12828">12 BITS: SEQUENCE</text>
+                  <text x="687" y="75" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#D12828">Local Counter (4096 / ms)</text>
+                </svg>
+              </div>
+              <div class="diagram-caption">FIGURE 18.1: Complete 64-bit binary layout of the Twitter Snowflake ID format.</div>
+            </div>
+
+            <div class="content-grid-3">
+              <div class="card card-yellow">
+                <div class="card-title">41-Bit Timestamp</div>
+                <p style="font-size:0.85rem;">
+                  2<sup>41</sup> milliseconds ≈ 69.7 years of unique, roughly time-sorted keys.
+                </p>
+              </div>
+
+              <div class="card card-green">
+                <div class="card-title">10-Bit Worker ID</div>
+                <p style="font-size:0.85rem;">
+                  2<sup>10</sup> = 1,024 independent server instances can run concurrently without collision.
+                </p>
+              </div>
+
+              <div class="card card-red">
+                <div class="card-title">12-Bit Local Sequence</div>
+                <p style="font-size:0.85rem;">
+                  2<sup>12</sup> = 4,096 unique IDs per millisecond on a single worker node!
+                </p>
+              </div>
+            </div>
+
+            <div class="sticky-note-callout">
+              <p><strong>The Breakthrough:</strong> Generating a Snowflake ID requires <strong>0ms network round-trip time</strong>. It is computed in CPU registers in less than 1 microsecond!</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 19: The Hybrid Encoding Step - Base62 & MD5 on Snowflake -->
+        <article class="slide-wrapper" data-slide-index="18" data-category="Encoding">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 19 of 22</span>
+              <span class="slide-topic-tag">Encoding Pipeline</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">The Hybrid Encoding Step: Converting Snowflake to 6 Characters</h2>
+            <p class="slide-intro">
+              Now that we have a 64-bit integer guaranteed 100% unique across all servers and time, how do we convert it into a short 6-to-7 character string? We pass our Snowflake ID into Base62 or MD5.
+            </p>
+
+            <div class="content-grid-2">
+              <div class="card card-white">
+                <div class="card-title">🔠 Why Base62 is Superior</div>
+                <p style="font-size:0.9rem;">
+                  Base62 consists of <code>[0-9, a-z, A-Z]</code> (10 digits + 26 lowercase + 26 uppercase = 62 characters).<br>
+                  • 6 characters: 62<sup>6</sup> = <strong>56.8 Billion</strong> URLs<br>
+                  • 7 characters: 62<sup>7</sup> = <strong>3.52 Trillion</strong> URLs<br>
+                  Converting a 64-bit integer to Base62 is a simple mathematical change of base: <code>ID % 62</code> with <strong>zero hash collisions possible</strong>!
+                </p>
+              </div>
+
+              <div class="card card-white">
+                <div class="card-title">🛡️ Why Hashing Snowflake Works (Unlike Approach 1)</div>
+                <p style="font-size:0.9rem;">
+                  In Approach 1, hashing long URLs produced collisions because different URLs had similar text prefixes. But here, the input key to MD5 is our <strong>Snowflake ID</strong>. Because the input spectrum is guaranteed 100% globally unique, the cropped hash has an almost zero probability of collision!
+                </p>
+              </div>
+            </div>
+
+            <div class="sketch-diagram-box">
+              <div style="font-family:'JetBrains Mono'; font-size:0.88rem; width:100%;">
+                <div style="background:#F4F1EA; padding:0.75rem; border:2px solid var(--ink-blue); border-radius:6px;">
+                  <code>Unique Snowflake ID: 154829104829104829</code><br>
+                  &nbsp;&nbsp;──▶ Base62 Conversion [ID % 62] ──▶ <code>b9X7qL</code> (6 chars)<br>
+                  &nbsp;&nbsp;──▶ Prepend Domain ──▶ <strong style="color:var(--alert-red);">https://bit.ly/b9X7qL</strong>
+                </div>
+              </div>
+              <div class="diagram-caption">FIGURE 19.1: The complete hybrid generation pipeline yielding zero collisions and microsecond latency.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 20: Edge Cases - Custom Aliases & Dual-Layer Expiration -->
+        <article class="slide-wrapper" data-slide-index="19" data-category="Edge Cases">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 20 of 22</span>
+              <span class="slide-topic-tag">Production Edge Cases</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Handling Custom Aliases &amp; Dual-Layer Expiration</h2>
+            <p class="slide-intro">
+              In production, two functional requirements require special architectural handling: <strong>Custom Vanity Aliases</strong> for premium users, and <strong>Dual-Layer Expiration (Cron Job + Redis TTL)</strong>.
+            </p>
+
+            <div class="content-grid-2">
+              <!-- Custom Alias -->
+              <div class="card card-yellow">
+                <div class="card-title">✨ Custom Vanity Alias Flow</div>
+                <p style="font-size:0.9rem;">
+                  When a premium customer requests <code>bit.ly/ASD</code>, we bypass the Snowflake generator! The backend directly executes:
+                  <code style="display:block; margin:0.5rem 0; padding:0.4rem; background:#FFF; border:1px solid #ccc;">SELECT 1 FROM urls WHERE short_url = 'ASD';</code>
+                  If found, return <code>HTTP 409 Conflict (Alias Taken)</code>. If free, insert into database and reserve immediately.
+                </p>
+              </div>
+
+              <!-- Expiration Flow -->
+              <div class="card card-red">
+                <div class="card-title">⏱️ The Zombie Hot-Key Danger</div>
+                <p style="font-size:0.9rem;">
+                  A daily database <strong>Cron Job</strong> runs at midnight deleting expired rows (<code>DELETE FROM urls WHERE expires_at &lt; NOW()</code>).<br>
+                  <strong>The Trap:</strong> If a hot link is in Redis cache, deleting it from the DB does NOT evict it from Redis! You MUST set an explicit <strong>Redis TTL</strong> matching the expiration date, otherwise expired links stay alive indefinitely in memory!
+                </p>
+              </div>
+            </div>
+
+            <div class="sketch-diagram-box">
+              <svg width="100%" height="130" viewBox="0 0 700 120" fill="none">
+                <!-- DB Cron -->
+                <rect x="50" y="20" width="260" height="80" rx="8" stroke="#0E2A5C" stroke-width="2" fill="#FFFFFF"/>
+                <text x="180" y="50" text-anchor="middle" font-family="Lexend" font-size="12" font-weight="700">DATABASE TIER</text>
+                <text x="180" y="75" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#D12828">Daily Cron Job deletes expired rows</text>
+
+                <!-- Sync Arrow -->
+                <path d="M320 60 L380 60" stroke="#0E2A5C" stroke-width="2" stroke-dasharray="3 3"/>
+                <text x="350" y="50" text-anchor="middle" font-family="JetBrains Mono" font-size="10">SYNC</text>
+
+                <!-- Redis TTL -->
+                <rect x="390" y="20" width="260" height="80" rx="8" stroke="#0E2A5C" stroke-width="2" fill="#FFFFA5"/>
+                <text x="520" y="50" text-anchor="middle" font-family="Lexend" font-size="12" font-weight="700">REDIS CACHE TIER</text>
+                <text x="520" y="75" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#15803d">TTL on keys auto-evicts hot expired links</text>
+              </svg>
+              <div class="diagram-caption">FIGURE 20.1: Dual-layer synchronization prevents expired hot keys from remaining zombie-accessible in Redis.</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 21: Redirection Mechanics - HTTP 301 vs HTTP 302 -->
+        <article class="slide-wrapper" data-slide-index="20" data-category="Redirection">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 21 of 22</span>
+              <span class="slide-topic-tag">Protocol Mechanics</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Redirection Mechanics: HTTP 301 vs HTTP 302</h2>
+            <p class="slide-intro">
+              When returning the redirect to the client, should you use <strong>HTTP 301 Moved Permanently</strong> or <strong>HTTP 302 Found</strong>? Bunny explains that this architectural decision directly impacts server bandwidth versus analytics tracking.
+            </p>
+
+            <div class="code-comparison-container">
+              <!-- 301 -->
+              <div class="card card-white">
+                <div class="card-title" style="color:var(--alert-red);">301 Moved Permanently</div>
+                <ul style="font-size:0.9rem; list-style:disc; padding-left:1.25rem; line-height:1.6; margin-top:0.5rem;">
+                  <li><strong>Browser Action:</strong> Browser permanently caches the mapping in local disk cache.</li>
+                  <li><strong>Subsequent Clicks:</strong> Never hit our server again! Browser redirects locally.</li>
+                  <li><span style="color:#166534; font-weight:700;">PRO:</span> Drastically reduces server traffic, bandwidth cost, and latency.</li>
+                  <li><span style="color:var(--alert-red); font-weight:700;">CON:</span> <strong>Destroys click analytics!</strong> You cannot track total clicks, country, or user agent.</li>
+                </ul>
+              </div>
+
+              <!-- 302 -->
+              <div class="card card-white">
+                <div class="card-title" style="color:var(--ink-blue);">302 Found (Temporary)</div>
+                <ul style="font-size:0.9rem; list-style:disc; padding-left:1.25rem; line-height:1.6; margin-top:0.5rem;">
+                  <li><strong>Browser Action:</strong> Browser executes redirect immediately without caching locally.</li>
+                  <li><strong>Subsequent Clicks:</strong> Every single click hits our backend.</li>
+                  <li><span style="color:#166534; font-weight:700;">PRO:</span> <strong>100% accurate click tracking!</strong> Enables telemetry dashboards, advertising, and AI/ML pipelines.</li>
+                  <li><span style="color:var(--alert-red); font-weight:700;">CON:</span> Higher request volume hitting our load balancers and cache.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="sticky-note-callout">
+              <p><strong>Senior Engineer Decision Matrix:</strong> If your business model charges premium customers for click analytics dashboards (like Bitly Enterprise), you <strong>MUST choose HTTP 302</strong>. If your goal is purely offloading bandwidth for internal tools, choose HTTP 301.</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- SLIDE 22: Senior Engineer Wrap-Up & Production Checklist -->
+        <article class="slide-wrapper" data-slide-index="21" data-category="Summary">
+          <div class="slide-card tape-top">
+            <div class="slide-meta-row">
+              <span class="slide-step-badge">Slide 22 of 22</span>
+              <span class="slide-topic-tag">Interview Checklist</span>
+              <button class="slide-bookmark-btn" onclick="toggleBookmarkCurrentSlide()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                <span class="bm-text">Bookmark</span>
+              </button>
+            </div>
+
+            <h2 class="slide-title">Senior Engineer Interview Wrap-Up &amp; Checklist</h2>
+            <p class="slide-intro">
+              Congratulations! You have completed the complete architectural breakdown of a production URL shortener. Here is your quick memory checklist before heading into your technical interview.
+            </p>
+
+            <div class="content-grid-2">
+              <div class="card card-white">
+                <div class="card-title">📋 5-Step Interview Recap</div>
+                <ol style="font-size:0.9rem; padding-left:1.25rem; line-height:1.6;">
+                  <li><strong>Step 1:</strong> Scoped functional &amp; non-functional requirements (100M DAU, sub-200ms latency, AP over CP).</li>
+                  <li><strong>Step 2:</strong> Identified 3 core entities (Short URL, Long URL, User).</li>
+                  <li><strong>Step 3:</strong> Authored REST API contracts (<code>POST /urls</code>, <code>GET /{short}</code>).</li>
+                  <li><strong>Step 4:</strong> Sketched High-Level Design (Client -> Server -> Database).</li>
+                  <li><strong>Step 5:</strong> Delivered Hybrid LLD (ZooKeeper + Snowflake + Base62).</li>
+                </ol>
+              </div>
+
+              <div class="card card-green">
+                <div class="card-title">💡 Key Takeaways to Impress the Interviewer</div>
+                <ul style="font-size:0.9rem; padding-left:1.25rem; list-style:disc; line-height:1.6;">
+                  <li>Explained MD5 6-char truncation collision cascade (16ms -> 32ms+).</li>
+                  <li>Showed why local counters fail behind load balancers.</li>
+                  <li>Highlighted Redis counter Single Point of Failure (SPOF).</li>
+                  <li>Used ZooKeeper strictly at boot-time to prevent runtime bottlenecks.</li>
+                  <li>Analyzed HTTP 301 vs 302 business and analytics trade-offs.</li>
+                  <li>Synchronized Redis TTL with daily DB Cron Job to eliminate zombie keys.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="deck-controls-bar" style="margin-top:2rem; position:static;">
+              <button onclick="switchView('quiz')" class="deck-nav-btn primary" style="width:100%; justify-content:center; padding:0.75rem;">
+                <span>Take the Chapter 01 Knowledge Quiz (10 Questions) →</span>
+              </button>
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- FLOATING DECK CONTROLS -->
+      <div id="deckControlsBar" class="deck-controls-bar">
+        <button id="prevSlideBtn" class="deck-nav-btn" onclick="navigateSlide(-1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Previous</span>
+        </button>
+
+        <div class="slide-progress-container">
+          <div class="slide-counter-text">
+            Slide <span id="currentSlideDisplay">1</span> of <span id="totalSlidesDisplay">22</span>
+          </div>
+          <div class="progress-bar-track">
+            <div id="progressBarFill" class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <button id="nextSlideBtn" class="deck-nav-btn primary" onclick="navigateSlide(1)">
+          <span>Next</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <!-- =====================================================================
+           VIEW 2: READER (DIGITAL TEXTBOOK CONTINUOUS READING MODE)
+           ===================================================================== -->
+      <section id="readerView" class="view-content-wrapper">
+        <div class="slide-card tape-top" style="margin-bottom:2rem;">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Digital Textbook</span>
+            <span class="slide-topic-tag">Continuous Handbook Mode</span>
+          </div>
+          <h1 class="slide-title">Design a URL Shortener: The Complete Engineering Handbook</h1>
+          <p class="slide-intro">
+            This continuous handbook provides an unbroken, printable reference of all 22 masterclass slides, diagrams, and code snippets.
+          </p>
+        </div>
+
+        <div id="readerContentContainer">
+          <!-- Populated by JavaScript on switchView('reader') -->
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           VIEW 3: REVISION (SUMMARY CHEAT SHEET & MATRIX)
+           ===================================================================== -->
+      <section id="revisionView" class="view-content-wrapper">
+        <div class="slide-card tape-top" style="margin-bottom:2rem;">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Quick Revision</span>
+            <span class="slide-topic-tag">Cheat Sheet &amp; Interview Matrix</span>
+          </div>
+          <h2 class="slide-title">URL Shortener Architectural Revision Cards</h2>
+          <p class="slide-intro">
+            High-density revision cards for quick review 15 minutes before your system design interview.
+          </p>
+
+          <div class="content-grid-2">
+            <div class="card card-white">
+              <div class="card-title">1. The 5-Step Process</div>
+              <p style="font-size:0.9rem;">
+                <strong>1. Scoping (10-15m):</strong> Clarify functional (shorten, redirect, custom alias, TTL) &amp; non-functional (&lt;200ms latency, 100M DAU, 1B URLs, AP over CP).<br>
+                <strong>2. Entities:</strong> Short URL, Long URL, User Metadata.<br>
+                <strong>3. REST APIs:</strong> <code>POST /urls</code> &amp; <code>GET /{short}</code>.<br>
+                <strong>4. HLD:</strong> Client ──▶ App Server ──▶ Database.<br>
+                <strong>5. LLD:</strong> Evaluate 3 approaches (MD5 vs Counter vs ZooKeeper + Snowflake).
+              </p>
+            </div>
+
+            <div class="card card-yellow">
+              <div class="card-title">2. Approaches Comparison Matrix</div>
+              <div style="font-size:0.85rem; font-family:'JetBrains Mono', monospace; line-height:1.6;">
+                <div style="margin-bottom:0.35rem;">• <strong>Approach 1 (MD5):</strong> Cropping causes Birthday Paradox collisions. DB retry loop causes latency cascade (16ms, 32ms, 48ms...).</div>
+                <div style="margin-bottom:0.35rem;">• <strong>Approach 2 (Counters):</strong> Eliminates DB scan (6ms). But multiple servers produce duplicate 0, 1, 2. Central Redis is a SPOF.</div>
+                <div>• <strong>Approach 3 (Hybrid ZK + Snowflake):</strong> ZooKeeper assigns Worker ID on boot only (0 runtime network calls). 64-bit Snowflake ID generated locally in &lt;1µs!</div>
+              </div>
+            </div>
+
+            <div class="card card-red">
+              <div class="card-title">3. HTTP 301 vs HTTP 302</div>
+              <p style="font-size:0.9rem;">
+                <strong>301 Moved Permanently:</strong> Browser caches redirect locally on disk. Subsequent visits bypass backend server. Saves bandwidth, but <em>destroys click analytics</em>.<br>
+                <strong>302 Found:</strong> Browser never caches. Every click hits our servers. <em>Enables 100% accurate click tracking</em> and telemetry dashboards.
+              </p>
+            </div>
+
+            <div class="card card-green">
+              <div class="card-title">4. Expiration &amp; Zombie Keys</div>
+              <p style="font-size:0.9rem;">
+                Daily database Cron Job purges expired rows. However, hot links cached in Redis must have an identical <strong>TTL set</strong>. Otherwise, hot links remain active in memory long after their database expiration!
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           VIEW 4: FLASHCARDS (SPACED REPETITION 3D FLIP-CARDS)
+           ===================================================================== -->
+      <section id="flashcardsView" class="view-content-wrapper">
+        <div class="slide-card tape-top" style="margin-bottom:1.5rem;">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Spaced Repetition</span>
+            <span class="slide-topic-tag">Interactive Flashcard Deck</span>
+          </div>
+          <h2 class="slide-title">Active Recall Flashcards</h2>
+          <p class="slide-intro">
+            Click any flashcard to flip between the Question and the Senior Engineer Explanation.
+          </p>
+
+          <div class="flashcard-grid">
+            <!-- Card 1 -->
+            <div class="flashcard-item" onclick="this.classList.toggle('flipped')">
+              <div class="flashcard-inner">
+                <div class="flashcard-front">
+                  <span class="slide-step-badge">Card 01</span>
+                  <div style="font-weight:700; font-size:1.1rem; color:var(--ink-blue);">Why does a URL Shortener prioritize Availability over Consistency in the CAP theorem?</div>
+                  <span style="font-size:0.75rem; color:#888;">Click to flip ↺</span>
+                </div>
+                <div class="flashcard-back">
+                  <div style="font-weight:800; color:var(--alert-red); margin-bottom:0.5rem;">Senior Engineer Answer:</div>
+                  <p style="font-size:0.85rem; line-height:1.5;">
+                    If Bitly is down, users leave. But users don't need instantaneous atomic consistency because it takes a human several seconds to copy and share a link anyway! Eventual consistency (&lt;200ms) causes zero friction.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="flashcard-item" onclick="this.classList.toggle('flipped')">
+              <div class="flashcard-inner">
+                <div class="flashcard-front">
+                  <span class="slide-step-badge">Card 02</span>
+                  <div style="font-weight:700; font-size:1.1rem; color:var(--ink-blue);">What is the fundamental flaw of truncating an MD5 hash to 6 characters?</div>
+                  <span style="font-size:0.75rem; color:#888;">Click to flip ↺</span>
+                </div>
+                <div class="flashcard-back">
+                  <div style="font-weight:800; color:var(--alert-red); margin-bottom:0.5rem;">Senior Engineer Answer:</div>
+                  <p style="font-size:0.85rem; line-height:1.5;">
+                    The Birthday Paradox! At 1 Billion URLs, different long URLs with similar prefixes produce identical 6-character hashes, triggering repetitive DB collision checks and latency spikes (16ms ──▶ 32ms ──▶ 48ms).
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="flashcard-item" onclick="this.classList.toggle('flipped')">
+              <div class="flashcard-inner">
+                <div class="flashcard-front">
+                  <span class="slide-step-badge">Card 03</span>
+                  <div style="font-weight:700; font-size:1.1rem; color:var(--ink-blue);">Why can't each horizontally scaled app server maintain its own local auto-increment counter?</div>
+                  <span style="font-size:0.75rem; color:#888;">Click to flip ↺</span>
+                </div>
+                <div class="flashcard-back">
+                  <div style="font-weight:800; color:var(--alert-red); margin-bottom:0.5rem;">Senior Engineer Answer:</div>
+                  <p style="font-size:0.85rem; line-height:1.5;">
+                    When Server 1, Server 2, and Server 3 boot up, their local counters all start at 0. As the load balancer distributes requests, each server produces identical IDs (0, 1, 2), causing immediate duplicate key crashes in the DB!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="flashcard-item" onclick="this.classList.toggle('flipped')">
+              <div class="flashcard-inner">
+                <div class="flashcard-front">
+                  <span class="slide-step-badge">Card 04</span>
+                  <div style="font-weight:700; font-size:1.1rem; color:var(--ink-blue);">How does Apache ZooKeeper eliminate runtime network calls in the Snowflake solution?</div>
+                  <span style="font-size:0.75rem; color:#888;">Click to flip ↺</span>
+                </div>
+                <div class="flashcard-back">
+                  <div style="font-weight:800; color:var(--alert-red); margin-bottom:0.5rem;">Senior Engineer Answer:</div>
+                  <p style="font-size:0.85rem; line-height:1.5;">
+                    ZooKeeper is called ONCE when an app server boots up to assign it a unique 10-bit Worker ID. During runtime, the server generates 64-bit Snowflake IDs in local CPU memory in &lt;1µs without touching ZooKeeper!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 5 -->
+            <div class="flashcard-item" onclick="this.classList.toggle('flipped')">
+              <div class="flashcard-inner">
+                <div class="flashcard-front">
+                  <span class="slide-step-badge">Card 05</span>
+                  <div style="font-weight:700; font-size:1.1rem; color:var(--ink-blue);">What is the trade-off between HTTP 301 and HTTP 302 redirects?</div>
+                  <span style="font-size:0.75rem; color:#888;">Click to flip ↺</span>
+                </div>
+                <div class="flashcard-back">
+                  <div style="font-weight:800; color:var(--alert-red); margin-bottom:0.5rem;">Senior Engineer Answer:</div>
+                  <p style="font-size:0.85rem; line-height:1.5;">
+                    HTTP 301 caches in browser disk cache, offloading server bandwidth but completely destroying click analytics. HTTP 302 forces every request to hit the server, enabling 100% accurate click analytics and telemetry.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 6 -->
+            <div class="flashcard-item" onclick="this.classList.toggle('flipped')">
+              <div class="flashcard-inner">
+                <div class="flashcard-front">
+                  <span class="slide-step-badge">Card 06</span>
+                  <div style="font-weight:700; font-size:1.1rem; color:var(--ink-blue);">Why must Redis cache keys have an explicit TTL matching database expiration?</div>
+                  <span style="font-size:0.75rem; color:#888;">Click to flip ↺</span>
+                </div>
+                <div class="flashcard-back">
+                  <div style="font-weight:800; color:var(--alert-red); margin-bottom:0.5rem;">Senior Engineer Answer:</div>
+                  <p style="font-size:0.85rem; line-height:1.5;">
+                    A daily DB cron job purges expired links from the database. But if a hot link is in Redis, it will never be queried from the DB, staying alive indefinitely in cache memory as a "zombie key"!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================================================================
+           VIEW 5: QUIZ (CHAPTER 01 ASSESSMENT MODE)
+           ===================================================================== -->
+      <section id="quizView" class="view-content-wrapper">
+        <div class="slide-card tape-top" style="margin-bottom:1.5rem;">
+          <div class="slide-meta-row">
+            <span class="slide-step-badge">Assessment</span>
+            <span class="slide-topic-tag">10-Question Knowledge Check</span>
+          </div>
+          <h2 class="slide-title">System Design: URL Shortener Certification Quiz</h2>
+          <p class="slide-intro">
+            Test your first-principles mastery. Select the best answer for each production scenario to view instant technical rationale.
+          </p>
+
+          <div id="quizContainer">
+            <!-- Question 1 -->
+            <div class="quiz-card" data-quiz-id="1">
+              <div style="font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+                1. In a 45-minute system design interview, how much time should you budget for Step 1 (Requirements Gathering)?
+              </div>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 1, false)">A) 2 to 3 minutes — start drawing database diagrams immediately.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 1, true)">B) 10 to 15 minutes — thoroughly scope functional/non-functional needs and numbers.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 1, false)">C) 30 minutes — write complete pseudocode before drawing components.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 1, false)">D) 0 minutes — interviewers expect you to know Bitly requirements without asking.</button>
+              <div class="quiz-explanation-box"></div>
+            </div>
+
+            <!-- Question 2 -->
+            <div class="quiz-card" data-quiz-id="2">
+              <div style="font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+                2. Why is Eventual Consistency (AP) chosen over Strong Consistency (CP) for a URL shortener?
+              </div>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 2, false)">A) Because relational databases do not support ACID transactions.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 2, true)">B) Because human users take seconds to share links; a 200ms replica sync delay causes zero friction while keeping the site 100% available.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 2, false)">C) Because strong consistency is illegal in RFC 3986 URL specifications.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 2, false)">D) Because microservices cannot communicate over TCP sockets.</button>
+              <div class="quiz-explanation-box"></div>
+            </div>
+
+            <!-- Question 3 -->
+            <div class="quiz-card" data-quiz-id="3">
+              <div style="font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+                3. What latency penalty occurs in Approach 1 (MD5 + Truncation) when a hash collision happens?
+              </div>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 3, false)">A) Latency stays identical at 1ms.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 3, true)">B) The system must re-hash with a salt and re-scan the DB (+16ms per retry), cascading into 32ms, 48ms, 64ms+ spikes.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 3, false)">C) The server terminates the client socket with HTTP 504.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 3, false)">D) The load balancer automatically redirects the client to Google.</button>
+              <div class="quiz-explanation-box"></div>
+            </div>
+
+            <!-- Question 4 -->
+            <div class="quiz-card" data-quiz-id="4">
+              <div style="font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+                4. Why does a distributed cluster of app servers using local auto-increment counters fail?
+              </div>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 4, false)">A) Because integer counters cannot exceed 255.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 4, true)">B) Because each server boots with counter=0, producing duplicate IDs (0, 1, 2) that collide in the database.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 4, false)">C) Because load balancers only support UDP traffic.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 4, false)">D) Because auto-increment requires Redis.</button>
+              <div class="quiz-explanation-box"></div>
+            </div>
+
+            <!-- Question 5 -->
+            <div class="quiz-card" data-quiz-id="5">
+              <div style="font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+                5. What role does Apache ZooKeeper play in the 64-bit Snowflake hybrid solution?
+              </div>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 5, false)">A) It generates the short URL string on every client request.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 5, false)">B) It acts as the primary relational database storing long URLs.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 5, true)">C) It coordinates cluster registration once at server boot, assigning each node a unique 10-bit Worker ID.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 5, false)">D) It manages browser cookies and TLS certificates.</button>
+              <div class="quiz-explanation-box"></div>
+            </div>
+
+            <!-- Question 6 -->
+            <div class="quiz-card" data-quiz-id="6">
+              <div style="font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+                6. How many bits are allocated for timestamp and worker ID in a standard 64-bit Snowflake ID?
+              </div>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 6, true)">A) 41 bits timestamp (~69 years) and 10 bits worker ID (1024 workers).</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 6, false)">B) 10 bits timestamp and 41 bits worker ID.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 6, false)">C) 64 bits timestamp and 0 bits worker ID.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 6, false)">D) 32 bits timestamp and 32 bits worker ID.</button>
+              <div class="quiz-explanation-box"></div>
+            </div>
+
+            <!-- Question 7 -->
+            <div class="quiz-card" data-quiz-id="7">
+              <div style="font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+                7. Why is HTTP 302 Found mandatory if the business sells click analytics dashboards to customers?
+              </div>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 7, false)">A) Because HTTP 301 is forbidden by GDPR regulations.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 7, true)">B) Because HTTP 301 caches in the client browser disk cache, causing subsequent clicks to bypass our server entirely.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 7, false)">C) Because HTTP 302 automatically compresses video files.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 7, false)">D) Because HTTP 302 is faster than HTTP 301.</button>
+              <div class="quiz-explanation-box"></div>
+            </div>
+
+            <!-- Question 8 -->
+            <div class="quiz-card" data-quiz-id="8">
+              <div style="font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+                8. What dangerous edge case occurs if a daily DB Cron Job deletes expired rows but Redis keys have no TTL?
+              </div>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 8, false)">A) The database reboots automatically.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 8, true)">B) Hot links remain live in Redis cache as "zombie keys", allowing users to access expired links indefinitely.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 8, false)">C) All short URLs are converted to uppercase.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 8, false)">D) ZooKeeper drops all persistent znodes.</button>
+              <div class="quiz-explanation-box"></div>
+            </div>
+
+            <!-- Question 9 -->
+            <div class="quiz-card" data-quiz-id="9">
+              <div style="font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+                9. How many unique URLs can be represented by a 7-character Base62 alphanumeric string?
+              </div>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 9, false)">A) Exactly 1 Million.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 9, false)">B) 56.8 Billion (62^6).</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 9, true)">C) 3.52 Trillion (62^7).</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 9, false)">D) 100 Trillion.</button>
+              <div class="quiz-explanation-box"></div>
+            </div>
+
+            <!-- Question 10 -->
+            <div class="quiz-card" data-quiz-id="10">
+              <div style="font-weight:700; color:var(--ink-blue); margin-bottom:0.5rem;">
+                10. What is the database indexing strategy required on the `urls` table?
+              </div>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 10, true)">A) A Unique B-Tree Index on `short_url` to guarantee O(log N) lookups on every redirect.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 10, false)">B) No index is needed because SQL databases auto-index all VARCHAR fields.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 10, false)">C) Only index the `created_at` timestamp.</button>
+              <button class="quiz-option-btn" onclick="checkQuizAnswer(this, 10, false)">D) Index the long URL using full-text inverted search.</button>
+              <div class="quiz-explanation-box"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- =========================================================================
+       DRAWERS & OVERLAYS
+       ========================================================================= -->
+  <div id="drawerOverlay" class="drawer-overlay" onclick="closeAllDrawers()"></div>
+
+  <!-- TOC Drawer -->
+  <aside id="tocDrawer" class="slide-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title">Table of Contents</div>
+      <button class="drawer-close-btn" onclick="closeAllDrawers()">&times;</button>
+    </div>
+    <div id="tocListContainer" style="overflow-y:auto; flex:1; padding-right:0.5rem;">
+      <!-- Populated dynamically via JS -->
+    </div>
+  </aside>
+
+  <!-- Personal Notepad Drawer -->
+  <aside id="notesDrawer" class="slide-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title">Personal Study Notepad</div>
+      <button class="drawer-close-btn" onclick="closeAllDrawers()">&times;</button>
+    </div>
+    <div style="flex:1; display:flex; flex-direction:column; gap:0.75rem;">
+      <p style="font-size:0.82rem; color:#666;">
+        Notes auto-save to <code>localStorage</code> under <code>url_shortener_personal_notes</code>.
+      </p>
+      <textarea id="personalNotepad" style="flex:1; width:100%; padding:0.75rem; border:2px solid var(--ink-blue); border-radius:8px; font-family:'JetBrains Mono', monospace; font-size:0.88rem; line-height:1.5; resize:none; background:#FFF;" placeholder="Type your personal observations, interview notes, or edge cases here..."></textarea>
+      <div style="display:flex; gap:0.5rem;">
+        <button onclick="copyPersonalNotes()" class="deck-nav-btn" style="flex:1; justify-content:center; font-size:0.8rem;">Copy Notes</button>
+        <button onclick="exportPersonalNotes()" class="deck-nav-btn primary" style="flex:1; justify-content:center; font-size:0.8rem;">Export (.md)</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Search Modal -->
+  <div id="searchModal" style="display:none;">
+    <div class="drawer-overlay active" onclick="closeSearchModal()"></div>
+    <div class="search-modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h3 style="font-size:1.25rem; font-weight:800; color:var(--ink-blue);">Global Slide Search</h3>
+        <button onclick="closeSearchModal()" style="font-size:1.5rem; font-weight:700; color:var(--alert-red);">&times;</button>
+      </div>
+      <input type="text" id="globalSearchInput" placeholder="Search topics (e.g. ZooKeeper, Snowflake, 301, MD5)..." 
+             style="width:100%; padding:0.75rem 1rem; border:2px solid var(--ink-blue); border-radius:8px; font-size:1rem; font-family:'Lexend'; margin-bottom:1rem;" oninput="runGlobalSearch()">
+      <div id="searchResultsContainer" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:0.5rem;">
+        <div style="color:#666; font-size:0.88rem;">Type a keyword to jump to any slide...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client-side Scripts -->
+  <script>
+    // State Object
+    const state = {
+      currentSlide: 0,
+      totalSlides: 22,
+      currentView: 'presentation',
+      bookmarks: JSON.parse(localStorage.getItem('url_shortener_bookmarks') || '[]'),
+      personalNotes: localStorage.getItem('url_shortener_personal_notes') || '',
+      visitedSlides: new Set([0])
+    };
+
+    // Initialize UI
+    document.addEventListener('DOMContentLoaded', () => {
+      buildTOC();
+      updateSlideDisplay();
+      initPersonalNotes();
+      updateBookmarkButtonState();
+    });
+
+    // View Switching
+    function switchView(viewName) {
+      state.currentView = viewName;
+
+      // Update Header Buttons
+      document.querySelectorAll('.view-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === viewName);
+      });
+
+      // Toggle Views
+      document.getElementById('presentationView').style.display = (viewName === 'presentation') ? 'flex' : 'none';
+      document.getElementById('deckControlsBar').style.display = (viewName === 'presentation') ? 'flex' : 'none';
+
+      document.querySelectorAll('.view-content-wrapper').forEach(wrapper => {
+        wrapper.classList.remove('active');
+      });
+
+      if (viewName === 'reader') {
+        const reader = document.getElementById('readerView');
+        reader.classList.add('active');
+        buildReaderContent();
+      } else if (viewName === 'revision') {
+        document.getElementById('revisionView').classList.add('active');
+      } else if (viewName === 'flashcards') {
+        document.getElementById('flashcardsView').classList.add('active');
+      } else if (viewName === 'quiz') {
+        document.getElementById('quizView').classList.add('active');
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Slide Navigation
+    function navigateSlide(direction) {
+      const nextIdx = state.currentSlide + direction;
+      if (nextIdx >= 0 && nextIdx < state.totalSlides) {
+        navigateToSlide(nextIdx);
+      }
+    }
+
+    function navigateToSlide(idx) {
+      const slides = document.querySelectorAll('.slide-wrapper');
+      slides[state.currentSlide].classList.remove('active');
+      state.currentSlide = idx;
+      slides[state.currentSlide].classList.add('active');
+      state.visitedSlides.add(idx);
+
+      updateSlideDisplay();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateSlideDisplay() {
+      document.getElementById('currentSlideDisplay').innerText = state.currentSlide + 1;
+      document.getElementById('totalSlidesDisplay').innerText = state.totalSlides;
+
+      const pct = ((state.currentSlide + 1) / state.totalSlides) * 100;
+      document.getElementById('progressBarFill').style.width = pct + '%';
+
+      document.getElementById('prevSlideBtn').disabled = (state.currentSlide === 0);
+      document.getElementById('nextSlideBtn').disabled = (state.currentSlide === state.totalSlides - 1);
+
+      updateBookmarkButtonState();
+      updateTOCVisited();
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        if (state.currentView === 'presentation') {
+          e.preventDefault();
+          navigateSlide(1);
+        }
+      } else if (e.key === 'ArrowLeft') {
+        if (state.currentView === 'presentation') {
+          e.preventDefault();
+          navigateSlide(-1);
+        }
+      } else if (e.key === '/') {
+        e.preventDefault();
+        openSearchModal();
+      } else if (e.key === 'Escape') {
+        closeAllDrawers();
+        closeSearchModal();
+      }
+    });
+
+    // Bookmarking
+    function toggleBookmarkCurrentSlide() {
+      const idx = state.currentSlide;
+      const pos = state.bookmarks.indexOf(idx);
+
+      if (pos > -1) {
+        state.bookmarks.splice(pos, 1);
+      } else {
+        state.bookmarks.push(idx);
+        state.bookmarks.sort((a, b) => a - b);
+      }
+
+      localStorage.setItem('url_shortener_bookmarks', JSON.stringify(state.bookmarks));
+      updateBookmarkButtonState();
+    }
+
+    function updateBookmarkButtonState() {
+      const isBookmarked = state.bookmarks.includes(state.currentSlide);
+      const headerBtn = document.getElementById('headerBookmarkBtn');
+      if (headerBtn) headerBtn.classList.toggle('active', isBookmarked);
+
+      const slideBtns = document.querySelectorAll('.slide-bookmark-btn');
+      slideBtns.forEach(btn => {
+        const parent = btn.closest('.slide-wrapper');
+        if (parent) {
+          const idx = parseInt(parent.dataset.slideIndex, 10);
+          const bm = state.bookmarks.includes(idx);
+          btn.classList.toggle('active', bm);
+          const txt = btn.querySelector('.bm-text');
+          if (txt) txt.innerText = bm ? 'Bookmarked' : 'Bookmark';
+        }
+      });
+    }
+
+    // Table of Contents Builder
+    function buildTOC() {
+      const container = document.getElementById('tocListContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const slides = document.querySelectorAll('.slide-wrapper');
+      slides.forEach((s, idx) => {
+        const title = s.querySelector('.slide-title')?.innerText || `Slide ${idx + 1}`;
+        const cat = s.dataset.category || 'General';
+
+        const item = document.createElement('div');
+        item.className = 'toc-item';
+        item.style.cssText = 'padding: 0.6rem; border: 1.5px solid var(--ink-blue); border-radius: 6px; margin-bottom: 0.5rem; background: #FFF; cursor: pointer; display: flex; justify-content: space-between; align-items: center;';
+        item.onclick = () => {
+          navigateToSlide(idx);
+          if (state.currentView !== 'presentation') switchView('presentation');
+          closeAllDrawers();
+        };
+
+        item.innerHTML = `
+          <div>
+            <div style="font-size:0.75rem; font-weight:700; color:var(--alert-red);">${cat}</div>
+            <div style="font-size:0.88rem; font-weight:700; color:var(--ink-blue);">${idx + 1}. ${title}</div>
+          </div>
+          <span id="tocCheck_${idx}" style="font-size:0.8rem; font-weight:700; color:#15803d;">${state.visitedSlides.has(idx) ? '✓' : ''}</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function updateTOCVisited() {
+      state.visitedSlides.forEach(idx => {
+        const check = document.getElementById(`tocCheck_${idx}`);
+        if (check) check.innerText = '✓';
+      });
+    }
+
+    // Reader Mode Builder
+    function buildReaderContent() {
+      const container = document.getElementById('readerContentContainer');
+      if (!container || container.children.length > 0) return;
+
+      const slides = document.querySelectorAll('.slide-wrapper');
+      slides.forEach((s, idx) => {
+        const clone = s.cloneNode(true);
+        clone.classList.add('active');
+        clone.style.display = 'block';
+        clone.style.marginBottom = '2rem';
+        container.appendChild(clone);
+      });
+    }
+
+    // Drawers
+    function toggleDrawer(id) {
+      const drawer = document.getElementById(id);
+      const overlay = document.getElementById('drawerOverlay');
+      if (!drawer) return;
+
+      const isOpen = drawer.classList.contains('active');
+      closeAllDrawers();
+
+      if (!isOpen) {
+        drawer.classList.add('active');
+        overlay.classList.add('active');
+      }
+    }
+
+    function closeAllDrawers() {
+      document.querySelectorAll('.slide-drawer').forEach(d => d.classList.remove('active'));
+      document.getElementById('drawerOverlay').classList.remove('active');
+    }
+
+    // Search Modal
+    function openSearchModal() {
+      document.getElementById('searchModal').style.display = 'block';
+      setTimeout(() => document.getElementById('globalSearchInput').focus(), 50);
+    }
+
+    function closeSearchModal() {
+      document.getElementById('searchModal').style.display = 'none';
+    }
+
+    function runGlobalSearch() {
+      const q = document.getElementById('globalSearchInput').value.toLowerCase().trim();
+      const container = document.getElementById('searchResultsContainer');
+      if (!q) {
+        container.innerHTML = '<div style="color:#666; font-size:0.88rem;">Type a keyword to jump to any slide...</div>';
+        return;
+      }
+
+      const slides = document.querySelectorAll('.slide-wrapper');
+      let matches = [];
+
+      slides.forEach((s, idx) => {
+        const text = s.innerText.toLowerCase();
+        if (text.includes(q)) {
+          const title = s.querySelector('.slide-title')?.innerText || `Slide ${idx + 1}`;
+          matches.push({ idx, title });
+        }
+      });
+
+      if (matches.length === 0) {
+        container.innerHTML = '<div style="color:var(--alert-red); font-size:0.88rem; font-weight:700;">No slides matched your search query.</div>';
+        return;
+      }
+
+      container.innerHTML = matches.map(m => `
+        <div style="padding:0.6rem; background:#F4F1EA; border:1.5px solid var(--ink-blue); border-radius:6px; cursor:pointer;" onclick="navigateToSlide(${m.idx}); if (state.currentView !== 'presentation') switchView('presentation'); closeSearchModal();">
+          <strong style="color:var(--ink-blue);">Slide ${m.idx + 1}:</strong> ${m.title}
+        </div>
+      `).join('');
+    }
+
+    // Personal Notes
+    function initPersonalNotes() {
+      const area = document.getElementById('personalNotepad');
+      if (!area) return;
+      area.value = state.personalNotes;
+      area.addEventListener('input', () => {
+        state.personalNotes = area.value;
+        localStorage.setItem('url_shortener_personal_notes', area.value);
+      });
+    }
+
+    function copyPersonalNotes() {
+      const area = document.getElementById('personalNotepad');
+      if (!area || !area.value.trim()) {
+        alert('Your notepad is empty.');
+        return;
+      }
+      navigator.clipboard.writeText(area.value).then(() => {
+        alert('Notes copied to clipboard!');
+      });
+    }
+
+    function exportPersonalNotes() {
+      const area = document.getElementById('personalNotepad');
+      if (!area || !area.value.trim()) {
+        alert('Write some notes before exporting.');
+        return;
+      }
+      const md = `# Design a URL Shortener — Study Notes\nExported: ${new Date().toLocaleString()}\n\n---\n\n${area.value}`;
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'URL_Shortener_Study_Notes.md';
+      a.click();
+    }
+
+    // Quiz Evaluator
+    const quizExplanations = {
+      1: "Step 1 (Requirements Gathering) takes 10–15 minutes. Rushing to draw architecture without understanding scale (1B URLs vs 10k URLs) guarantees failure.",
+      2: "URL shorteners prioritize Availability (AP). Users take seconds to copy and paste links; an eventual consistency replication delay of &lt;200ms causes zero user friction.",
+      3: "Cropping MD5 hashes causes collisions. Each collision forces the server to append a salt, re-hash, and re-scan the DB (+16ms per loop), cascading latency.",
+      4: "Local counters boot independently at 0 on each microservice node, immediately producing duplicate IDs across instances.",
+      5: "ZooKeeper registers workers ONCE during server boot, assigning each node a unique 10-bit Worker ID with 0 runtime network overhead.",
+      6: "Snowflake allocates 41 bits to timestamps (~69 years) and 10 bits to Worker IDs (up to 1,024 independent servers).",
+      7: "HTTP 301 caches in browser disk cache, so repeat clicks never reach our server. To track analytics telemetry, HTTP 302 Found is mandatory.",
+      8: "If Redis keys have no TTL, hot links remain active in cache memory as zombie keys long after being deleted by the daily DB cron job.",
+      9: "Base62 has 62 characters [0-9, a-z, A-Z]. 62^7 = 3,521,614,606,208 (3.52 Trillion) unique URLs.",
+      10: "Every redirect executes `WHERE short_url = ?`. A B-Tree index ensures O(log N) lookups instead of scanning 1 Billion table rows."
+    };
+
+    function checkQuizAnswer(btn, qId, isCorrect) {
+      const card = btn.closest('.quiz-card');
+      if (card.dataset.locked === 'true') return;
+      card.dataset.locked = 'true';
+
+      const buttons = card.querySelectorAll('.quiz-option-btn');
+      buttons.forEach(b => b.classList.add('locked'));
+
+      const expBox = card.querySelector('.quiz-explanation-box');
+      expBox.style.display = 'block';
+
+      if (isCorrect) {
+        btn.classList.add('correct');
+        expBox.style.background = 'var(--highlighter-green)';
+        expBox.style.color = '#14532d';
+        expBox.style.border = '1.5px solid #166534';
+        expBox.innerHTML = `<strong>✓ Correct!</strong> ${quizExplanations[qId]}`;
+      } else {
+        btn.classList.add('incorrect');
+        expBox.style.background = '#FFE4E4';
+        expBox.style.color = 'var(--alert-red)';
+        expBox.style.border = '1.5px solid var(--alert-red)';
+        expBox.innerHTML = `<strong>✗ Incorrect.</strong> ${quizExplanations[qId]}`;
+      }
+    }
+  </script>
+
+</body>
+</html>

@@ -206,7 +206,10 @@
 
           <!-- CTA Buttons -->
           <div class="flex flex-wrap items-center gap-4 pt-2">
-            <a href="#curriculum" class="bg-[#0E2A5C] text-white px-6 py-3.5 sketch-border sketch-shadow hover:bg-[#D12828] transition-all transform hover:-translate-y-0.5 font-bold flex items-center gap-2 cursor-pointer text-lg">
+            <a href="/url_shortener" class="bg-[#D12828] text-white px-6 py-3.5 sketch-border sketch-shadow hover:bg-[#0E2A5C] transition-all transform hover:-translate-y-0.5 font-bold flex items-center gap-2 cursor-pointer text-lg">
+              <span>Read CH 01 Masterclass (URL Shortener) →</span>
+            </a>
+            <a href="#curriculum" class="bg-[#0E2A5C] text-white px-5 py-3.5 sketch-border sketch-shadow hover:bg-[#D12828] transition-all font-bold flex items-center gap-2 cursor-pointer text-lg">
               <span>Explore Curriculum (12 Topics) →</span>
             </a>
             <a href="#simulator" class="bg-[#FFFFA5] text-[#0E2A5C] px-5 py-3.5 sketch-border hover:bg-yellow-200 transition-all font-bold flex items-center gap-2 cursor-pointer text-lg">
@@ -798,8 +801,11 @@
           </div>
         </div>
 
-        <div class="flex justify-end gap-3 pt-2">
-          <button onclick="closeModal('notesModal')" class="bg-[#0E2A5C] text-white px-5 py-2 sketch-border font-bold hover:bg-[#D12828] transition-colors cursor-pointer">
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t-2 border-dashed border-[#0E2A5C]">
+          <a href="/url_shortener" class="bg-[#D12828] text-white px-5 py-2.5 sketch-border font-bold hover:bg-[#0E2A5C] transition-colors flex items-center gap-2 cursor-pointer text-sm">
+            <span>Open Complete 22-Slide Masterclass Notes &amp; Simulator →</span>
+          </a>
+          <button onclick="closeModal('notesModal')" class="bg-[#0E2A5C] text-white px-5 py-2.5 sketch-border font-bold hover:bg-[#D12828] transition-colors cursor-pointer text-sm">
             Close Blueprint
           </button>
         </div>
@@ -956,11 +962,14 @@
           badgeHtml = '<span class="bg-[#D12828] text-white text-[10px] font-bold px-1.5 py-0.2 sketch-border">★ ACTIVE CHAPTER READY</span>';
           actionBtnHtml = `
             <div class="mb-3 flex flex-wrap gap-2">
-              <button onclick="openUrlShortenerNotesModal()" class="text-xs bg-[#D12828] text-white px-3 py-1.5 sketch-border hover:bg-[#0E2A5C] transition-colors font-bold flex items-center gap-1 cursor-pointer">
-                <span>Read Architecture Notes →</span>
+              <a href="/url_shortener" class="text-xs bg-[#D12828] text-white px-3 py-1.5 sketch-border hover:bg-[#0E2A5C] transition-colors font-bold flex items-center gap-1 cursor-pointer">
+                <span>Read Masterclass Notes (22 Slides) →</span>
+              </a>
+              <button onclick="openUrlShortenerNotesModal()" class="text-xs bg-white text-[#0E2A5C] px-2.5 py-1.5 sketch-border hover:bg-[#FFFFA5] transition-colors font-bold flex items-center gap-1 cursor-pointer">
+                <span>Quick Blueprint 📖</span>
               </button>
-              <a href="#simulator" class="text-xs bg-[#FFFFA5] text-[#0E2A5C] px-3 py-1.5 sketch-border hover:bg-yellow-200 transition-colors font-bold flex items-center gap-1">
-                <span>Launch Simulator ⚙</span>
+              <a href="#simulator" class="text-xs bg-[#FFFFA5] text-[#0E2A5C] px-2.5 py-1.5 sketch-border hover:bg-yellow-200 transition-colors font-bold flex items-center gap-1">
+                <span>Simulator ⚙</span>
               </a>
             </div>
           `;

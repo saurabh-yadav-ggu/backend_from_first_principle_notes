@@ -84,7 +84,7 @@ SYSTEM_DESIGN_CHAPTERS_DB: List[Chapter] = [
             "100:1 Read-to-Write traffic asymmetry & multi-tier Redis Cache-Aside sizing",
             "Database partitioning by Hash(short_key) % N and KGS pre-allocated key ranges"
         ],
-        has_transcript=False,
+        has_transcript=True,
         has_interactive_notes=True,
         status="completed"
     ),
@@ -521,6 +521,19 @@ async def serve_system_design_page(request: Request):
         }
     )
 
+@app.get("/url_shortener", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/url_shortener/", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/url-shortener", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/url-shortener/", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/url_shortener/index.html", response_class=HTMLResponse, tags=["Pages"])
+async def serve_url_shortener_masterclass(request: Request):
+    """Serves Chapter 01 / URL Shortener complete interactive masterclass notes (22 slides, 5 views, simulation) via Jinja2 template."""
+    return templates.TemplateResponse(
+        request=request,
+        name="url_shortener.html",
+        context={"request": request}
+    )
+
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc: HTTPException):
     """Handles 404 errors with JSON for API endpoints and custom sketch template for web pages."""
@@ -586,6 +599,12 @@ async def get_transcript_text(chapter_name: str):
             BASE_DIR / "what_is backend_and_its_working" / "transcript_backend.md",
             BASE_DIR / "transcript" / "transcript_backend.md",
             BASE_DIR / "transcript_backend.md"
+        ]
+    elif clean_name in ["url_shortener", "urlshortener", "url_shortner", "urlshortner"]:
+        candidates = [
+            BASE_DIR / "transcript" / "system_design_transcript" / "url_shortner.md",
+            BASE_DIR / "transcript" / "url_shortner.md",
+            BASE_DIR / "url_shortner.md"
         ]
     else:
         candidates = []
