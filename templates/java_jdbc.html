@@ -1,0 +1,3355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Java Database Connectivity (JDBC) from First Principles — Deep hand-drawn sketch notes masterclass covering JDBC architecture, DriverManager, Connection, Statement vs PreparedStatement, SQL Injection mechanics, ResultSet cursor navigation, try-with-resources, Transactions, and Connection Pooling.">
+  <title>Java JDBC from Scratch — Java & JVM Notes Masterclass</title>
+
+  <!-- Google Fonts: Lexend (rules.md) & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Shared Sketch Theme CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/sketch-theme.css') }}">
+
+  <style>
+    /* Scoped Chapter Styles & Design System (rules.md & notestructre.md) */
+    :root {
+      --paper-note: #F4F1EA;
+      --paper-card: #FFFFFF;
+      --ink-blue: #0E2A5C;
+      --ink-subtle: #1e3a6d;
+      --pencil-grey: #2D3748;
+      --pencil-light: #4A5568;
+      --alert-red: #D12828;
+      --alert-red-subtle: rgba(209, 40, 40, 0.12);
+      --highlighter-yellow: #FFFFA5;
+      --highlighter-green: #d4f8d4;
+      --highlighter-orange: #ffe3b3;
+      --highlighter-blue: #d4e8ff;
+      --ballpoint-blue: #0000FF;
+      --border-dark: #0E2A5C;
+      --border-subtle: #cbd5e1;
+
+      --font-hand: 'Lexend', sans-serif;
+      --font-sans: 'Lexend', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --header-height: 68px;
+      --footer-height: 64px;
+      --container-max: 1200px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--paper-note);
+      color: var(--pencil-grey);
+      font-family: 'Lexend', sans-serif;
+      background-image: linear-gradient(rgba(180, 195, 220, 0.22) 1px, transparent 1px);
+      background-size: 100% 1.6em;
+      line-height: 1.6;
+      font-size: 1.05rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+    .container {
+      width: 100%;
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+
+    /* Global Header */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(244, 241, 234, 0.96);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 2px solid var(--ink-blue);
+      box-shadow: 0 2px 6px rgba(14, 42, 92, 0.08);
+      height: var(--header-height);
+    }
+
+    .header-inner {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-portal-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.65rem;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+      transition: all 0.15s ease;
+    }
+    .nav-portal-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 3px 3px 0px 0px var(--alert-red);
+      border-color: var(--alert-red);
+      color: var(--alert-red);
+    }
+
+    .chapter-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.25rem 0.65rem;
+      background: var(--highlighter-yellow);
+      border: 2px solid var(--border-dark);
+      border-radius: 4px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--border-dark);
+      box-shadow: 2px 2px 0px 0px var(--border-dark);
+    }
+
+    /* View Switcher */
+    .view-switcher {
+      display: flex;
+      align-items: center;
+      background: #EAE6DC;
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      padding: 0.2rem;
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+    }
+
+    .view-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--pencil-grey);
+      border-radius: 200px 10px 180px 10px/10px 180px 10px 200px;
+      transition: all 0.15s ease;
+    }
+    .view-btn.active {
+      background: var(--paper-card);
+      color: var(--ink-blue);
+      border: 1.5px solid var(--ink-blue);
+      box-shadow: 1px 1px 0px 0px var(--ink-blue);
+    }
+    .view-btn:hover:not(.active) {
+      color: var(--ink-blue);
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .action-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      font-size: 0.95rem;
+      color: var(--ink-blue);
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+      transition: all 0.15s ease;
+    }
+    .action-icon-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 3px 3px 0px 0px var(--alert-red);
+      border-color: var(--alert-red);
+      color: var(--alert-red);
+    }
+
+    /* Main Layout */
+    main.main-content {
+      flex: 1;
+      padding: 1.5rem 0 3rem;
+    }
+
+    .view-container {
+      display: none;
+    }
+    .view-container.active {
+      display: block;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Washi Tape & Sketch Components */
+    .washi-tape {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%) rotate(-1deg);
+      background: rgba(255, 255, 165, 0.85);
+      border-left: 2px dashed rgba(0, 0, 0, 0.15);
+      border-right: 2px dashed rgba(0, 0, 0, 0.15);
+      padding: 0.15rem 1.75rem;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #7A6600;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      z-index: 2;
+    }
+
+    .washi-tape-coral {
+      background: rgba(255, 180, 180, 0.88);
+      color: #8C2020;
+    }
+
+    .sketch-card {
+      position: relative;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      box-shadow: 4px 4px 0px 0px var(--ink-blue);
+      padding: 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .sketch-badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 800;
+      border: 1.5px solid var(--ink-blue);
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-yellow { background: var(--highlighter-yellow); color: #5B4800; }
+    .badge-blue { background: var(--highlighter-blue); color: #0C326E; }
+    .badge-green { background: var(--highlighter-green); color: #165316; }
+    .badge-red { background: var(--alert-red-subtle); color: var(--alert-red); border-color: var(--alert-red); }
+
+    /* Code Blocks */
+    pre, code {
+      font-family: var(--font-mono);
+    }
+
+    .code-box {
+      background: #1E293B;
+      color: #F8FAFC;
+      border: 2px solid var(--ink-blue);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin: 1rem 0;
+      box-shadow: 3px 3px 0px 0px var(--ink-blue);
+      position: relative;
+    }
+
+    .code-box .code-label {
+      position: absolute;
+      top: 6px;
+      right: 10px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #94A3B8;
+      background: #0F172A;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .inline-code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: rgba(14, 42, 92, 0.07);
+      border: 1px solid rgba(14, 42, 92, 0.2);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+      color: var(--ink-blue);
+      font-weight: 600;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      padding: 1rem 1.25rem;
+      margin: 1.25rem 0;
+      position: relative;
+      box-shadow: 3px 3px 0px 0px var(--ink-blue);
+    }
+    .callout-note { background: #F0F7FF; border-color: #1E40AF; }
+    .callout-warning { background: #FFF8E6; border-color: #B45309; }
+    .callout-danger { background: #FEF2F2; border-color: #B91C1C; }
+    .callout-tip { background: #F0FDF4; border-color: #15803D; }
+
+    .callout-title {
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* -------------------------------------------------------------
+       VIEW 1: PRESENTATION / SLIDES
+    -------------------------------------------------------------- */
+    .slide-deck-wrapper {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .slide-stage {
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      border-radius: 255px 25px 225px 25px/25px 225px 25px 255px;
+      box-shadow: 6px 6px 0px 0px var(--ink-blue);
+      padding: 2.25rem;
+      min-height: 540px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .slide-content {
+      flex: 1;
+    }
+
+    .slide-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px dashed var(--border-subtle);
+    }
+
+    .slide-title-wrap {
+      flex: 1;
+    }
+
+    .slide-num-pill {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--pencil-light);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .slide-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--ink-blue);
+      line-height: 1.25;
+      margin-top: 0.2rem;
+    }
+
+    .slide-deck-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1.5rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .slide-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      box-shadow: 3px 3px 0px 0px var(--ink-blue);
+      transition: all 0.15s ease;
+    }
+    .slide-nav-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 4px 4px 0px 0px var(--alert-red);
+      border-color: var(--alert-red);
+      color: var(--alert-red);
+    }
+    .slide-nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: 1px 1px 0px 0px var(--ink-blue);
+    }
+
+    .slide-progress-bar-wrap {
+      flex: 1;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      align-items: center;
+    }
+
+    .slide-progress-track {
+      width: 100%;
+      height: 8px;
+      background: #E2E8F0;
+      border: 1.5px solid var(--ink-blue);
+      border-radius: 200px;
+      overflow: hidden;
+    }
+
+    .slide-progress-fill {
+      height: 100%;
+      background: var(--ink-blue);
+      width: 4.5%;
+      transition: width 0.25s ease;
+    }
+
+    .slide-progress-text {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--pencil-grey);
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.75rem;
+      max-height: 480px;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .overview-item {
+      background: var(--paper-note);
+      border: 1.5px solid var(--ink-blue);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+    }
+    .overview-item:hover, .overview-item.active {
+      background: var(--highlighter-yellow);
+      transform: translateY(-2px);
+      box-shadow: 3px 3px 0px 0px var(--alert-red);
+      border-color: var(--alert-red);
+    }
+
+    /* -------------------------------------------------------------
+       VIEW 2: DIGITAL TEXTBOOK / READER
+    -------------------------------------------------------------- */
+    .reader-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .reader-grid { grid-template-columns: 1fr; }
+    }
+
+    .reader-toc {
+      position: sticky;
+      top: 84px;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      box-shadow: 3px 3px 0px 0px var(--ink-blue);
+      padding: 1.25rem;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+    }
+
+    .reader-toc h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--ink-blue);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid var(--ink-blue);
+    }
+
+    .reader-toc ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .reader-toc a {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--pencil-grey);
+      display: block;
+      padding: 0.25rem 0.4rem;
+      border-radius: 4px;
+      transition: all 0.1s ease;
+    }
+    .reader-toc a:hover {
+      background: var(--highlighter-yellow);
+      color: var(--ink-blue);
+      transform: translateX(3px);
+    }
+
+    .reader-body {
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      border-radius: 255px 20px 225px 20px/20px 225px 20px 255px;
+      box-shadow: 5px 5px 0px 0px var(--ink-blue);
+      padding: 2.5rem;
+    }
+
+    .reader-section {
+      margin-bottom: 3.5rem;
+      padding-bottom: 2rem;
+      border-bottom: 2px dashed var(--border-subtle);
+    }
+    .reader-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .reader-section h2 {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--ink-blue);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .reader-section h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--ink-subtle);
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    .reader-section p {
+      margin-bottom: 1rem;
+      font-size: 1.02rem;
+      color: var(--pencil-grey);
+    }
+
+    /* Diagram Canvas / Visual Mockups */
+    .diagram-canvas {
+      background: #FBF9F5;
+      border: 2px solid var(--ink-blue);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      box-shadow: 3px 3px 0px 0px var(--ink-blue);
+    }
+
+    .diagram-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--pencil-light);
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .architecture-flow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+
+    .arch-box {
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 8px;
+      padding: 0.9rem 1rem;
+      text-align: center;
+      flex: 1;
+      min-width: 140px;
+      box-shadow: 3px 3px 0px 0px var(--ink-blue);
+    }
+
+    .arch-box.highlight {
+      background: var(--highlighter-yellow);
+      border-color: #8C7B00;
+    }
+
+    .arch-box .box-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--ink-blue);
+    }
+
+    .arch-box .box-desc {
+      font-size: 0.75rem;
+      color: var(--pencil-light);
+      margin-top: 0.25rem;
+    }
+
+    .flow-arrow {
+      font-weight: 900;
+      color: var(--alert-red);
+      font-size: 1.25rem;
+    }
+
+    /* -------------------------------------------------------------
+       INTERACTIVE SIMULATORS
+    -------------------------------------------------------------- */
+    .simulator-card {
+      background: #FFFDF9;
+      border: 3px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      box-shadow: 4px 4px 0px 0px var(--ink-blue);
+      padding: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    .sim-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .sim-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--ink-blue);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .sim-controls {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .sim-btn {
+      padding: 0.4rem 0.85rem;
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 10px 225px 10px/10px 225px 10px 255px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--ink-blue);
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+      transition: all 0.15s ease;
+    }
+    .sim-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 3px 3px 0px 0px var(--alert-red);
+      border-color: var(--alert-red);
+      color: var(--alert-red);
+    }
+    .sim-btn.active {
+      background: var(--highlighter-yellow);
+      border-color: var(--ink-blue);
+    }
+
+    .sim-input {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 0.4rem 0.65rem;
+      border: 2px solid var(--ink-blue);
+      border-radius: 6px;
+      background: #FFFFFF;
+      color: var(--pencil-grey);
+      outline: none;
+      width: 100%;
+    }
+
+    .table-sketch {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    .table-sketch th, .table-sketch td {
+      border: 1.5px solid var(--ink-blue);
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    .table-sketch th {
+      background: var(--ink-blue);
+      color: #FFFFFF;
+      font-weight: 700;
+    }
+    .table-sketch tr:nth-child(even) td {
+      background: rgba(14, 42, 92, 0.03);
+    }
+    .table-sketch tr.active-row td {
+      background: var(--highlighter-yellow) !important;
+      font-weight: 700;
+    }
+
+    /* -------------------------------------------------------------
+       VIEW 3: REVISION CARDS
+    -------------------------------------------------------------- */
+    .revision-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .rev-card {
+      background: var(--paper-card);
+      border: 2px solid var(--ink-blue);
+      border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+      box-shadow: 4px 4px 0px 0px var(--ink-blue);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+    }
+    .rev-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 5px 5px 0px 0px var(--alert-red);
+      border-color: var(--alert-red);
+    }
+
+    .rev-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--ink-blue);
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .rev-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      font-size: 0.92rem;
+      margin-bottom: 1rem;
+    }
+
+    .rev-list li {
+      position: relative;
+      padding-left: 1.25rem;
+    }
+    .rev-list li::before {
+      content: "✏️";
+      position: absolute;
+      left: 0;
+      font-size: 0.8rem;
+    }
+
+    /* -------------------------------------------------------------
+       VIEW 4: FLASHCARDS
+    -------------------------------------------------------------- */
+    .flashcard-wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      perspective: 1200px;
+    }
+
+    .flashcard {
+      width: 100%;
+      min-height: 360px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+      cursor: pointer;
+    }
+    .flashcard.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      border-radius: 255px 20px 225px 20px/20px 225px 20px 255px;
+      box-shadow: 6px 6px 0px 0px var(--ink-blue);
+      padding: 2.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-back {
+      transform: rotateY(180deg);
+      background: #FFFDF7;
+      border-color: #B45309;
+      box-shadow: 6px 6px 0px 0px #B45309;
+    }
+
+    .flashcard-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1.75rem;
+      gap: 1rem;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* -------------------------------------------------------------
+       VIEW 5: QUIZ
+    -------------------------------------------------------------- */
+    .quiz-wrap {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .quiz-card {
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      border-radius: 255px 20px 225px 20px/20px 225px 20px 255px;
+      box-shadow: 5px 5px 0px 0px var(--ink-blue);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin: 1.25rem 0;
+    }
+
+    .quiz-opt-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--paper-note);
+      border: 2px solid var(--ink-blue);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--pencil-grey);
+      text-align: left;
+      transition: all 0.15s ease;
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+    }
+    .quiz-opt-btn:hover:not(:disabled) {
+      background: var(--highlighter-yellow);
+      transform: translateX(4px);
+    }
+    .quiz-opt-btn.correct {
+      background: var(--highlighter-green) !important;
+      border-color: #15803D !important;
+      color: #14532D !important;
+      box-shadow: 3px 3px 0px 0px #15803D !important;
+    }
+    .quiz-opt-btn.wrong {
+      background: var(--alert-red-subtle) !important;
+      border-color: var(--alert-red) !important;
+      color: var(--alert-red) !important;
+      box-shadow: 3px 3px 0px 0px var(--alert-red) !important;
+    }
+
+    .quiz-feedback {
+      display: none;
+      padding: 1rem 1.25rem;
+      border: 2px dashed var(--ink-blue);
+      border-radius: 8px;
+      background: #F8FAFC;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+    }
+
+    /* -------------------------------------------------------------
+       DRAWER & MODALS
+    -------------------------------------------------------------- */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(14, 42, 92, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+    }
+    .drawer-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .notes-drawer {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      max-width: 90vw;
+      height: 100vh;
+      background: var(--paper-note);
+      border-left: 3px solid var(--ink-blue);
+      box-shadow: -6px 0px 0px 0px var(--ink-blue);
+      z-index: 210;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 1.5rem;
+    }
+    .notes-drawer.open {
+      right: 0;
+    }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--ink-blue);
+      margin-bottom: 1rem;
+    }
+
+    .scratchpad-area {
+      flex: 1;
+      width: 100%;
+      border: 2px solid var(--ink-blue);
+      border-radius: 8px;
+      background: #FFFFFF;
+      padding: 1rem;
+      font-family: var(--font-hand);
+      font-size: 1rem;
+      resize: none;
+      outline: none;
+      line-height: 1.6;
+      box-shadow: 2px 2px 0px 0px var(--ink-blue);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(14, 42, 92, 0.45);
+      backdrop-filter: blur(4px);
+      z-index: 300;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-card {
+      background: var(--paper-card);
+      border: 3px solid var(--ink-blue);
+      border-radius: 255px 20px 225px 20px/20px 225px 20px 255px;
+      box-shadow: 6px 6px 0px 0px var(--ink-blue);
+      width: 100%;
+      max-width: 650px;
+      padding: 1.75rem;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    /* Footer */
+    .app-footer {
+      background: var(--paper-card);
+      border-top: 2px solid var(--ink-blue);
+      padding: 1.25rem 0;
+      font-size: 0.85rem;
+      text-align: center;
+      color: var(--pencil-light);
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sticky Global Header -->
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="header-left">
+        <a href="/" class="nav-portal-btn" title="Back to Curriculum Landing Page">
+          <span>🏠</span> Home
+        </a>
+        <a href="/java_notes" class="nav-portal-btn" title="Java & JVM Hub">
+          <span>☕</span> Java Hub
+        </a>
+        <div class="chapter-badge">
+          <span>⚡</span>
+          <span>Chapter 07 • JDBC from Scratch</span>
+        </div>
+      </div>
+
+      <!-- View Switcher -->
+      <nav class="view-switcher" role="tablist">
+        <button class="view-btn active" data-view="presentation" role="tab" aria-selected="true" title="Slide Presentation Mode">
+          <span>📽️</span> Slides
+        </button>
+        <button class="view-btn" data-view="reader" role="tab" aria-selected="false" title="Complete Digital Textbook">
+          <span>📖</span> Textbook
+        </button>
+        <button class="view-btn" data-view="revision" role="tab" aria-selected="false" title="High-Yield Cheat Sheets">
+          <span>⚡</span> Revision
+        </button>
+        <button class="view-btn" data-view="flashcards" role="tab" aria-selected="false" title="Interactive Flip Deck">
+          <span>🗂️</span> Cards
+        </button>
+        <button class="view-btn" data-view="quiz" role="tab" aria-selected="false" title="Knowledge Check Quiz">
+          <span>🧪</span> Quiz
+        </button>
+      </nav>
+
+      <!-- Utility Actions -->
+      <div class="header-actions">
+        <button class="action-icon-btn" id="openSearchBtn" title="Search Notes (HotKey: /)">
+          <span>🔍</span>
+        </button>
+        <button class="action-icon-btn" id="openNotepadBtn" title="Quick Scratchpad (HotKey: N)">
+          <span>📝</span>
+        </button>
+        <button class="action-icon-btn" id="toggleFullscreenBtn" title="Toggle Fullscreen (HotKey: F)">
+          <span>⛶</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <div class="container">
+
+      <!-- =============================================================
+           VIEW 1: PRESENTATION / SLIDE DECK (22 SLIDES)
+      ============================================================== -->
+      <section id="presentation-view" class="view-container active">
+        <div class="slide-deck-wrapper">
+          <div class="slide-stage" id="slideStage">
+            <div class="washi-tape">FIRST PRINCIPLES • JAVA JDBC</div>
+
+            <div class="slide-content" id="slideContent">
+              <!-- Dynamically populated by JS renderSlide() -->
+            </div>
+
+            <!-- Slide Navigation Bar -->
+            <div class="slide-deck-controls">
+              <button class="slide-nav-btn" id="prevSlideBtn" title="Previous Slide (←)">
+                <span>◀</span> Prev
+              </button>
+
+              <div class="slide-progress-bar-wrap">
+                <div class="slide-progress-track">
+                  <div class="slide-progress-fill" id="slideProgressFill"></div>
+                </div>
+                <span class="slide-progress-text" id="slideProgressText">Slide 1 of 22</span>
+              </div>
+
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="slide-nav-btn" id="overviewBtn" title="All Slides Overview (O)">
+                  <span>🗂️</span> Overview
+                </button>
+                <button class="slide-nav-btn" id="nextSlideBtn" title="Next Slide (→)">
+                  Next <span>▶</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============================================================
+           VIEW 2: DIGITAL TEXTBOOK / READER VIEW
+      ============================================================== -->
+      <section id="reader-view" class="view-container">
+        <div class="reader-grid">
+          <!-- Sticky Table of Contents -->
+          <aside class="reader-toc">
+            <h3>📑 Chapter Outline</h3>
+            <ul>
+              <li><a href="#sec-why-jdbc">1. Why JDBC Exists</a></li>
+              <li><a href="#sec-polymorphism">2. Polymorphism & Abstraction</a></li>
+              <li><a href="#sec-coordinates">3. The 3 Coordinates & URL</a></li>
+              <li><a href="#sec-driver-manager">4. DriverManager & Drivers</a></li>
+              <li><a href="#sec-statement-crud">5. Statement & CRUD Naive Way</a></li>
+              <li><a href="#sec-execution-triad">6. Triad of Execution Methods</a></li>
+              <li><a href="#sec-resultset">7. ResultSet Cursor & Mapping</a></li>
+              <li><a href="#sec-sql-injection">8. SQL Injection Anatomy</a></li>
+              <li><a href="#sec-prepared-statement">9. PreparedStatement Internals</a></li>
+              <li><a href="#sec-cleanup">10. try-with-resources Cleanup</a></li>
+              <li><a href="#sec-transactions">11. Transactions (commit/rollback)</a></li>
+              <li><a href="#sec-production">12. Connection Pools & ORM</a></li>
+            </ul>
+          </aside>
+
+          <!-- Textbook Body -->
+          <article class="reader-body">
+            <div class="washi-tape washi-tape-coral">MASTERCLASS TEXTBOOK</div>
+
+            <!-- Section 1 -->
+            <section id="sec-why-jdbc" class="reader-section">
+              <div class="sketch-badge badge-blue">FOUNDATIONAL ARCHITECTURE</div>
+              <h2>1. Why JDBC Exists: Bridging the JVM & Database Chasm</h2>
+              <p>
+                In any real-world backend architecture, your Java application executes inside the <strong>Java Virtual Machine (JVM)</strong> on <em>Server A</em>, while your relational database management system (such as MySQL, PostgreSQL, or Oracle) runs on an external server daemon on <em>Server B</em> (or locally listening on a TCP port such as <code>3306</code>).
+              </p>
+              <p>
+                This introduces a fundamental architectural divide known as the <strong>Object-Relational Impedance Mismatch</strong>:
+              </p>
+              <div class="diagram-canvas">
+                <div class="diagram-title">THE NETWORK & DATA MODEL CHASM</div>
+                <div class="architecture-flow">
+                  <div class="arch-box highlight">
+                    <div class="box-title">JVM Process (Java App)</div>
+                    <div class="box-desc">Server A • Heap Memory • References • Typed POJOs (`Student`)</div>
+                  </div>
+                  <div class="flow-arrow">⇄ TCP Socket ⇄</div>
+                  <div class="arch-box">
+                    <div class="box-title">Network Wire Protocol</div>
+                    <div class="box-desc">Raw Packets • IP:Port (3306) • SSL Handshake • Auth Tokens</div>
+                  </div>
+                  <div class="flow-arrow">⇄ SQL Wire ⇄</div>
+                  <div class="arch-box highlight">
+                    <div class="box-title">RDBMS Daemon (MySQL)</div>
+                    <div class="box-desc">Server B • Tables • Relational Tuples • Binary SQL Types</div>
+                  </div>
+                </div>
+              </div>
+              <p>
+                Java speaks <strong>Object references, class instances, and garbage-collected heaps</strong>. Databases speak <strong>tabular records, disk pages, B+Tree indexes, and raw binary network packets</strong>. To exchange data, Java must open an operating system network socket, serialize requests into the database's proprietary binary protocol, parse the database's responses, and reconstitute raw columnar bytes into Java domain instances.
+              </p>
+            </section>
+
+            <!-- Section 2 -->
+            <section id="sec-polymorphism" class="reader-section">
+              <div class="sketch-badge badge-yellow">DESIGN PATTERNS</div>
+              <h2>2. Polymorphism & The JDBC Abstraction Layer</h2>
+              <p>
+                Imagine if Java had to write custom socket code for every database: Oracle would require <code>OracleConnection</code>, MySQL would require <code>MySQLConnection</code>, PostgreSQL would require <code>PostgresConnection</code>. Every time an enterprise switched databases, their entire codebase would need to be rewritten.
+              </p>
+              <p>
+                Java solved this brilliantly using <strong>Polymorphism and Interface Decoupling</strong>, exactly as it did in the <strong>Java Collection Framework</strong>:
+              </p>
+
+              <table class="table-sketch">
+                <thead>
+                  <tr>
+                    <th>Domain</th>
+                    <th>Standard Java Interface (`java.*`)</th>
+                    <th>Concrete Vendor Implementation</th>
+                    <th>Common Polymorphic Methods</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Collections</strong></td>
+                    <td><code>java.util.List&lt;E&gt;</code></td>
+                    <td><code>ArrayList</code>, <code>LinkedList</code></td>
+                    <td><code>add()</code>, <code>remove()</code>, <code>get()</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>JDBC Connection</strong></td>
+                    <td><code>java.sql.Connection</code></td>
+                    <td><code>com.mysql.cj.jdbc.ConnectionImpl</code></td>
+                    <td><code>createStatement()</code>, <code>prepareStatement()</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>JDBC Statement</strong></td>
+                    <td><code>java.sql.PreparedStatement</code></td>
+                    <td><code>ClientPreparedStatement</code> (MySQL JAR)</td>
+                    <td><code>setString()</code>, <code>executeUpdate()</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>JDBC Result</strong></td>
+                    <td><code>java.sql.ResultSet</code></td>
+                    <td><code>com.mysql.cj.jdbc.result.ResultSetImpl</code></td>
+                    <td><code>next()</code>, <code>getString()</code>, <code>getLong()</code></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="callout callout-tip">
+                <div class="callout-title">💡 The Power of Decoupling</div>
+                <p>
+                  As a Java developer, your application code imports strictly from <code>java.sql.*</code>. You never import or reference MySQL-specific classes directly. The database vendor provides a compiled JAR (e.g. <code>mysql-connector-j-9.x.jar</code>) implementing these interfaces. If you migrate from MySQL to PostgreSQL tomorrow, you only change the JDBC URL and swap the Maven dependency; not a single line of your repository logic changes!
+                </p>
+              </div>
+            </section>
+
+            <!-- Section 3 -->
+            <section id="sec-coordinates" class="reader-section">
+              <div class="sketch-badge badge-green">CONFIGURATION</div>
+              <h2>3. The 3 Coordinates & The JDBC Connection URL</h2>
+              <p>
+                To establish a TCP socket link to an external database, the client requires three explicit coordinates:
+              </p>
+              <ol style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                <li><strong>JDBC Connection URL:</strong> The location, protocol, port, and schema namespace.</li>
+                <li><strong>Username:</strong> The authentication identity (e.g. <code>root</code>).</li>
+                <li><strong>Password:</strong> The cryptographic secret.</li>
+              </ol>
+
+              <div class="diagram-canvas">
+                <div class="diagram-title">ANATOMY OF A JDBC CONNECTION URL</div>
+                <div style="font-family: var(--font-mono); font-size: 1.05rem; background: #FFF; padding: 1rem; border: 2px solid var(--ink-blue); border-radius: 6px; text-align: center;">
+                  <span style="color: #D12828; font-weight: 700;">jdbc</span>:<span style="color: #0E2A5C; font-weight: 700;">mysql</span>://<span style="color: #15803D; font-weight: 700;">localhost:3306</span>/<span style="color: #B45309; font-weight: 700;">student_db</span>
+                </div>
+                <div style="display: flex; justify-content: space-around; margin-top: 0.75rem; font-size: 0.8rem; font-weight: 700;">
+                  <span style="color: #D12828;">Protocol</span>
+                  <span style="color: #0E2A5C;">Subprotocol (Driver ID)</span>
+                  <span style="color: #15803D;">Host & TCP Port</span>
+                  <span style="color: #B45309;">Database Schema Name</span>
+                </div>
+              </div>
+
+              <div class="code-box">
+                <div class="code-label">POM.XML (MAVEN DEPENDENCY)</div>
+<pre><code>&lt;!-- MySQL Connector/J JDBC Type 4 Pure Java Driver --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;com.mysql&lt;/groupId&gt;
+    &lt;artifactId&gt;mysql-connector-j&lt;/artifactId&gt;
+    &lt;version&gt;9.2.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+              </div>
+            </section>
+
+            <!-- Section 4 -->
+            <section id="sec-driver-manager" class="reader-section">
+              <div class="sketch-badge badge-blue">RUNTIME RESOLUTION</div>
+              <h2>4. DriverManager & Type 4 Driver Registration</h2>
+              <p>
+                In modern Java (JDBC 4.0+ / Java 6+), the <strong>Service Provider Interface (SPI)</strong> automatically scans your application classpath for <code>META-INF/services/java.sql.Driver</code>. When <code>mysql-connector-j</code> is present on the classpath, the MySQL driver registers itself automatically with <code>DriverManager</code>.
+              </p>
+              <div class="code-box">
+                <div class="code-label">JAVA CONNECTION ESTABLISHMENT</div>
+<pre><code>String url = "jdbc:mysql://localhost:3306/student_db";
+String username = "root";
+String password = "mypassword123";
+
+// DriverManager iterates registered drivers, matches 'jdbc:mysql:',
+// and delegates socket establishment to the vendor driver
+try (Connection conn = DriverManager.getConnection(url, username, password)) {
+    System.out.println("Connection established! DB Metadata: " + conn.getMetaData().getDatabaseProductName());
+} catch (SQLException e) {
+    System.err.println("Database connection failed: " + e.getErrorCode() + " - " + e.getMessage());
+}</code></pre>
+              </div>
+            </section>
+
+            <!-- Section 5 -->
+            <section id="sec-statement-crud" class="reader-section">
+              <div class="sketch-badge badge-yellow">CRUD OPERATIONS</div>
+              <h2>5. Statement & Naive CRUD Operations</h2>
+              <p>
+                Once a <code>Connection</code> is open, your Java application needs an execution envelope to transmit SQL commands across the network socket. The most basic interface is <code>java.sql.Statement</code>, instantiated via:
+              </p>
+              <div class="code-box">
+                <div class="code-label">STATEMENT CREATION</div>
+<pre><code>Statement stmt = connection.createStatement();</code></pre>
+              </div>
+              <p>
+                With <code>Statement</code>, queries are submitted as plain text strings. Here is how standard CRUD operations are implemented naively:
+              </p>
+              <div class="code-box">
+                <div class="code-label">NAIVE INSERT (STRING CONCATENATION)</div>
+<pre><code>String sql = "INSERT INTO students (name, email, age) VALUES ('Aditya', 'aditya@gmail.com', 28)";
+int rowsAffected = stmt.executeUpdate(sql);
+if (rowsAffected == 1) {
+    System.out.println("Row inserted successfully!");
+}</code></pre>
+              </div>
+            </section>
+
+            <!-- Section 6 -->
+            <section id="sec-execution-triad" class="reader-section">
+              <div class="sketch-badge badge-blue">API MASTERY</div>
+              <h2>6. The Triad of Query Execution Methods</h2>
+              <p>
+                Every JDBC developer must master the exact behavioral differences between the three execution methods available on <code>Statement</code> and <code>PreparedStatement</code>:
+              </p>
+
+              <table class="table-sketch">
+                <thead>
+                  <tr>
+                    <th>Method Name</th>
+                    <th>Return Type</th>
+                    <th>Intended SQL Operations</th>
+                    <th>Behavioral Semantics</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>executeUpdate(sql)</code></td>
+                    <td><code>int</code></td>
+                    <td><code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, DDL</td>
+                    <td>Returns the number of rows modified in the database. Returns <code>0</code> if no rows matched.</td>
+                  </tr>
+                  <tr>
+                    <td><code>executeQuery(sql)</code></td>
+                    <td><code>ResultSet</code></td>
+                    <td><code>SELECT</code> (Read-only queries)</td>
+                    <td>Returns a scrollable/forward-only cursor holding the tabular dataset.</td>
+                  </tr>
+                  <tr>
+                    <td><code>execute(sql)</code></td>
+                    <td><code>boolean</code></td>
+                    <td>General purpose (Dynamic / Stored Procedures / Batch)</td>
+                    <td>
+                      Returns <code>true</code> if the first result is a <code>ResultSet</code> (use <code>stmt.getResultSet()</code>).<br>
+                      Returns <code>false</code> if it is an update count (use <code>stmt.getUpdateCount()</code>).
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div class="callout callout-warning">
+                <div class="callout-title">⚠️ Common Interview Trap: `execute()` Return Value</div>
+                <p>
+                  Many junior engineers assume that <code>stmt.execute(sql)</code> returns <code>true</code> if the query succeeded and <code>false</code> if it failed. <strong>This is completely false!</strong> If a query fails, an <code>SQLException</code> is thrown. The boolean return value purely distinguishes between a query returning a tabular <code>ResultSet</code> (<code>true</code>) versus a DML row count (<code>false</code>).
+                </p>
+              </div>
+            </section>
+
+            <!-- Section 7 -->
+            <section id="sec-resultset" class="reader-section">
+              <div class="sketch-badge badge-green">DATA MAPPING</div>
+              <h2>7. ResultSet Internals: Cursors & Object-Relational Mapping</h2>
+              <p>
+                When you execute a <code>SELECT</code> query via <code>stmt.executeQuery(sql)</code>, the database does not transmit a list of Java objects; it sends raw binary tuples across the socket into a <code>java.sql.ResultSet</code> buffer.
+              </p>
+              <h3>The ResultSet Cursor Lifecycle</h3>
+              <p>
+                A <code>ResultSet</code> maintains an internal cursor pointing to the current row of data:
+              </p>
+              <div class="diagram-canvas">
+                <div class="diagram-title">RESULTSET CURSOR POSITIONING</div>
+                <div style="font-family: var(--font-mono); font-size: 0.95rem; line-height: 1.8;">
+                  <div>[State 0] <strong>beforeFirst()</strong> ➔ (Initial position when executeQuery returns. Calling getters here throws SQLException!)</div>
+                  <div style="color: #15803D; font-weight: 700;">➔ call rs.next() ➔ moves to Row 1: [ID: 1, Name: "Aditya", Email: "aditya@gmail.com", Age: 28]</div>
+                  <div style="color: #15803D; font-weight: 700;">➔ call rs.next() ➔ moves to Row 2: [ID: 2, Name: "Rohit", Email: "rohit@gmail.com", Age: 26]</div>
+                  <div>[State End] <strong>afterLast()</strong> ➔ rs.next() returns false! Traversal terminates.</div>
+                </div>
+              </div>
+
+              <h3>1-Based Indexing vs Column Label</h3>
+              <p>
+                Unlike standard Java arrays that begin at index <code>0</code>, JDBC columns are <strong>1-indexed</strong>!
+              </p>
+              <div class="code-box">
+                <div class="code-label">ROW MAPPING IN JAVA</div>
+<pre><code>// Method 1: Named Column Labels (Highly Recommended for readability)
+long id = rs.getLong("id");
+String name = rs.getString("name");
+String email = rs.getString("email");
+int age = rs.getInt("age");
+
+// Method 2: 1-Based Column Ordinals (Slightly faster, but brittle to column reordering)
+long idOrd = rs.getLong(1);
+String nameOrd = rs.getString(2);</code></pre>
+              </div>
+
+              <!-- Interactive Simulator 2: Cursor Stepper -->
+              <div class="simulator-card" id="cursorSimCard">
+                <div class="sim-header">
+                  <div class="sim-title">
+                    <span>🔬</span> Interactive Lab: ResultSet Cursor Stepper & POJO Mapper
+                  </div>
+                  <div class="sim-controls">
+                    <button class="sim-btn" id="cursorNextBtn">▶ rs.next()</button>
+                    <button class="sim-btn" id="cursorResetBtn">🔄 Reset (beforeFirst)</button>
+                  </div>
+                </div>
+                <p style="font-size: 0.88rem; color: var(--pencil-light); margin-bottom: 0.75rem;">
+                  Step through the cursor state to visualize how JDBC moves the pointer, extracts column values, and hydrates a typed <code>Student</code> Java object.
+                </p>
+
+                <table class="table-sketch" id="simCursorTable">
+                  <thead>
+                    <tr>
+                      <th>Status</th>
+                      <th>Row #</th>
+                      <th>id (BIGINT)</th>
+                      <th>name (VARCHAR)</th>
+                      <th>email (VARCHAR)</th>
+                      <th>age (INT)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr id="simRowBefore" class="active-row">
+                      <td><strong>CURSOR HERE</strong></td>
+                      <td>—</td>
+                      <td colspan="4"><em>[beforeFirst] Initial Position — Must call rs.next() before reading!</em></td>
+                    </tr>
+                    <tr id="simRow1">
+                      <td class="status-cell"></td>
+                      <td>1</td>
+                      <td>101</td>
+                      <td>Aditya</td>
+                      <td>aditya@gmail.com</td>
+                      <td>28</td>
+                    </tr>
+                    <tr id="simRow2">
+                      <td class="status-cell"></td>
+                      <td>2</td>
+                      <td>102</td>
+                      <td>Rohit Negi</td>
+                      <td>rohit@gmail.com</td>
+                      <td>26</td>
+                    </tr>
+                    <tr id="simRow3">
+                      <td class="status-cell"></td>
+                      <td>3</td>
+                      <td>103</td>
+                      <td>Sneha Rao</td>
+                      <td>sneha@gmail.com</td>
+                      <td>24</td>
+                    </tr>
+                    <tr id="simRowAfter">
+                      <td class="status-cell"></td>
+                      <td>—</td>
+                      <td colspan="4"><em>[afterLast] Cursor reached the end. rs.next() returned false!</em></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div style="margin-top: 1rem;">
+                  <div style="font-size: 0.85rem; font-weight: 700; color: var(--ink-blue); margin-bottom: 0.35rem;">Live Java POJO Hydration:</div>
+                  <pre style="background: #1E293B; color: #38BDF8; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.85rem;" id="simPojoOutput">Student pojo = null; // Cursor at beforeFirst</pre>
+                </div>
+              </div>
+            </section>
+
+            <!-- Section 8 -->
+            <section id="sec-sql-injection" class="reader-section">
+              <div class="sketch-badge badge-red">CRITICAL SECURITY</div>
+              <h2>8. The Deadly Vulnerability: SQL Injection Anatomy</h2>
+              <p>
+                When using raw <code>Statement</code> with string concatenation or Java 15+ Text Blocks, malicious user input is parsed directly into the database's SQL Abstract Syntax Tree (AST).
+              </p>
+              <p>
+                Consider a vulnerable authentication query:
+              </p>
+              <div class="code-box">
+                <div class="code-label">VULNERABLE STATEMENT CODE</div>
+<pre><code>// DANGEROUS: Direct String Concatenation!
+String sql = "SELECT * FROM users WHERE username = '" + userInput + "' AND password = '" + passInput + "'";
+ResultSet rs = stmt.executeQuery(sql);</code></pre>
+              </div>
+
+              <p>
+                If an attacker submits:
+                <br>
+                <code>userInput = "admin' --"</code> or <code>userInput = "' OR '1'='1"</code>
+                <br>
+                The resulting query becomes:
+              </p>
+              <div class="code-box">
+                <div class="code-label">HIJACKED SQL STRING</div>
+<pre><code>SELECT * FROM users WHERE username = '' OR '1'='1' AND password = 'xxx';
+-- Because '1'='1' is always TRUE, authentication is bypassed entirely!</code></pre>
+              </div>
+
+              <!-- Interactive Simulator 1: SQL Injection Lab -->
+              <div class="simulator-card" id="sqlInjSimCard">
+                <div class="sim-header">
+                  <div class="sim-title">
+                    <span>🛡️</span> Interactive Lab: SQL Injection Visualizer
+                  </div>
+                  <div class="sim-controls">
+                    <button class="sim-btn active" id="btnModeStatement">Statement (Vulnerable)</button>
+                    <button class="sim-btn" id="btnModePrepared">PreparedStatement (Secure)</button>
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                  <div>
+                    <label style="font-size: 0.85rem; font-weight: 700;">Simulated User Input (Username):</label>
+                    <input type="text" class="sim-input" id="simSqlInput" value="' OR '1'='1">
+                  </div>
+                  <div>
+                    <label style="font-size: 0.85rem; font-weight: 700;">Preset Exploits:</label>
+                    <select class="sim-input" id="simSqlPresets">
+                      <option value="' OR '1'='1">Classic Tautology: ' OR '1'='1</option>
+                      <option value="admin' --">Comment Bypass: admin' --</option>
+                      <option value="'; DROP TABLE students; --">Destructive Stacked: '; DROP TABLE...</option>
+                      <option value="legit_user">Normal Input: legit_user</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--pencil-grey); margin-bottom: 0.35rem;">Compiled Query Sent to Database Server:</div>
+                <pre style="background: #1E293B; color: #F8FAFC; padding: 0.85rem 1rem; border-radius: 6px; font-size: 0.9rem;" id="simSqlRendered">SELECT * FROM students WHERE email = '' OR '1'='1'</pre>
+
+                <div id="simSqlStatusAlert" class="callout callout-danger" style="margin-top: 1rem;">
+                  <div class="callout-title" id="simSqlStatusTitle">🚨 VULNERABILITY EXPLOITED!</div>
+                  <div id="simSqlStatusDesc" style="font-size: 0.9rem;">The SQL parser evaluated <code>'1'='1'</code> as a Boolean expression, returning all database rows and completely bypassing security filters!</div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Section 9 -->
+            <section id="sec-prepared-statement" class="reader-section">
+              <div class="sketch-badge badge-green">ENTERPRISE STANDARD</div>
+              <h2>9. PreparedStatement: Precompilation & Parameter Binding</h2>
+              <p>
+                To eliminate SQL Injection and maximize query performance, JDBC provides <code>PreparedStatement</code>.
+              </p>
+              <h3>Why PreparedStatement Is Immune to SQL Injection</h3>
+              <p>
+                With <code>PreparedStatement</code>, the database compiler processes the SQL string <strong>before</strong> parameters are attached. The parameter placeholders (<code>?</code>) are treated strictly as <strong>literal values</strong>, never as executable SQL tokens or grammar syntax. Even if a user passes <code>' OR '1'='1</code>, the database treats it as a single string literal equal to the exact characters <code>' OR '1'='1</code>.
+              </p>
+
+              <div class="diagram-canvas">
+                <div class="diagram-title">STATEMENT VS PREPARED STATEMENT COMPILATION LIFECYCLE</div>
+                <div class="architecture-flow">
+                  <div class="arch-box">
+                    <div class="box-title">Statement Execution</div>
+                    <div class="box-desc">Every Query ➔ Lexical Analysis ➔ Parse Tree ➔ Query Optimizer ➔ Disk Scan (High CPU overhead)</div>
+                  </div>
+                  <div class="flow-arrow">vs</div>
+                  <div class="arch-box highlight">
+                    <div class="box-title">PreparedStatement</div>
+                    <div class="box-desc">Query Plan Compiled Once ➔ Cached in DB Engine ➔ Parameters injected as binary literals (Zero parsing overhead)</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="code-box">
+                <div class="code-label">CLEAN PREPAREDSTATEMENT USAGE</div>
+<pre><code>String sql = """
+    INSERT INTO students (name, email, age)
+    VALUES (?, ?, ?)
+    """;
+
+try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+    pstmt.setString(1, student.getName());
+    pstmt.setString(2, student.getEmail());
+    pstmt.setInt(3, student.getAge());
+    
+    int rows = pstmt.executeUpdate();
+    System.out.println("Student persisted. Rows: " + rows);
+}</code></pre>
+              </div>
+            </section>
+
+            <!-- Section 10 -->
+            <section id="sec-cleanup" class="reader-section">
+              <div class="sketch-badge badge-blue">RESOURCE HYGIENE</div>
+              <h2>10. Resource Cleanup & try-with-resources</h2>
+              <p>
+                Every active <code>Connection</code>, <code>PreparedStatement</code>, and <code>ResultSet</code> holds an open Operating System file descriptor (TCP socket) and database server cursor locks. Failing to close them causes <strong>Connection Pool Starvation</strong> and severe memory leaks.
+              </p>
+              <h3>The Evolution: Finally Block vs try-with-resources</h3>
+              <p>
+                Before Java 7, cleaning up resources required atrocious nested <code>try-finally</code> blocks with manual null checks and secondary try-catches.
+              </p>
+              <div class="code-box">
+                <div class="code-label">MODERN JAVA 7+ CLEANUP (TRY-WITH-RESOURCES)</div>
+<pre><code>// All resources implementing java.lang.AutoCloseable close automatically in reverse order!
+String sql = "SELECT id, name, email, age FROM students WHERE id = ?";
+
+try (Connection conn = DriverManager.getConnection(url, user, pass);
+     PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+    pstmt.setLong(1, 101L);
+
+    try (ResultSet rs = pstmt.executeQuery()) {
+        if (rs.next()) {
+            Student s = new Student(
+                rs.getLong("id"),
+                rs.getString("name"),
+                rs.getString("email"),
+                rs.getInt("age")
+            );
+            System.out.println("Found student: " + s);
+        }
+    } // rs.close() invoked automatically here!
+
+} // pstmt.close() and conn.close() invoked automatically here!
+catch (SQLException e) {
+    e.printStackTrace();
+}</code></pre>
+              </div>
+            </section>
+
+            <!-- Section 11 -->
+            <section id="sec-transactions" class="reader-section">
+              <div class="sketch-badge badge-yellow">ACID GUARANTEES</div>
+              <h2>11. Transaction Management & ACID Semantics</h2>
+              <p>
+                By default, JDBC operates in <strong>Auto-Commit mode</strong> (<code>conn.getAutoCommit() == true</code>). Every individual SQL statement is immediately committed to persistent storage.
+              </p>
+              <p>
+                In financial or multi-step operations (e.g. transferring $1,000 from Alice to Bob), auto-commit is disastrous: if Alice's balance is debited and the network drops before Bob's balance is credited, $1,000 vanishes from the system.
+              </p>
+
+              <div class="code-box">
+                <div class="code-label">MANUAL TRANSACTION CONTROL (COMMIT / ROLLBACK)</div>
+<pre><code>try (Connection conn = DriverManager.getConnection(url, user, pass)) {
+    // 1. Disable Auto-Commit: begin transaction boundary
+    conn.setAutoCommit(false);
+
+    try (PreparedStatement debitStmt = conn.prepareStatement("UPDATE accounts SET balance = balance - 1000 WHERE id = 1");
+         PreparedStatement creditStmt = conn.prepareStatement("UPDATE accounts SET balance = balance + 1000 WHERE id = 2")) {
+
+        debitStmt.executeUpdate();
+        
+        // Simulate potential network or server crash
+        if (someFailureCondition) {
+            throw new SQLException("Network timed out before credit executed!");
+        }
+
+        creditStmt.executeUpdate();
+
+        // 2. Both operations succeeded: persist changes atomically!
+        conn.commit();
+        System.out.println("Transaction committed successfully!");
+
+    } catch (SQLException ex) {
+        // 3. Any failure triggers rollback: restores original state!
+        conn.rollback();
+        System.err.println("Transaction rolled back! Original balances restored.");
+    }
+}</code></pre>
+              </div>
+
+              <!-- Interactive Simulator 3: Bank Transfer Transaction -->
+              <div class="simulator-card" id="txSimCard">
+                <div class="sim-header">
+                  <div class="sim-title">
+                    <span>🏦</span> Interactive Lab: ACID Transaction Atomicity Simulator
+                  </div>
+                  <div class="sim-controls">
+                    <button class="sim-btn" id="btnSimulateTxSuccess">▶ Run Transaction (Normal)</button>
+                    <button class="sim-btn" id="btnSimulateTxFail">⚡ Inject Crash & Rollback</button>
+                    <button class="sim-btn" id="btnResetTx">🔄 Reset Balances</button>
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0;">
+                  <div class="arch-box" id="simBoxAlice">
+                    <div class="box-title">Account 1 (Alice)</div>
+                    <div style="font-size: 1.6rem; font-weight: 800; color: var(--ink-blue); margin: 0.5rem 0;" id="simAliceBal">$1,000</div>
+                    <div class="box-desc">Transferring $200 ➔</div>
+                  </div>
+                  <div class="arch-box" id="simBoxBob">
+                    <div class="box-title">Account 2 (Bob)</div>
+                    <div style="font-size: 1.6rem; font-weight: 800; color: var(--ink-blue); margin: 0.5rem 0;" id="simBobBal">$500</div>
+                    <div class="box-desc">Receiving $200 ➔</div>
+                  </div>
+                </div>
+
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--pencil-grey); margin-bottom: 0.35rem;">Transaction Log:</div>
+                <pre style="background: #1E293B; color: #A7F3D0; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.85rem;" id="simTxLog">Ready. Click 'Run Transaction' or 'Inject Crash & Rollback'.</pre>
+              </div>
+            </section>
+
+            <!-- Section 12 -->
+            <section id="sec-production" class="reader-section">
+              <div class="sketch-badge badge-blue">PRODUCTION PATTERNS</div>
+              <h2>12. Production Realities: Connection Pooling & The ORM Evolution</h2>
+              <p>
+                In high-throughput microservices handling thousands of requests per second, creating a fresh TCP connection via <code>DriverManager.getConnection()</code> on every HTTP request takes <strong>20 to 60 milliseconds</strong> due to TCP three-way handshake, TLS negotiation, and MySQL user authentication.
+              </p>
+              <h3>Connection Pooling (HikariCP)</h3>
+              <p>
+                Production applications use a connection pool (e.g. <strong>HikariCP</strong>, the default pool in Spring Boot). Pre-warmed TCP sockets remain open in memory. When a thread requires a connection, it borrows one from the pool in microseconds and returns it upon calling <code>connection.close()</code> (which is intercepted via a dynamic proxy to return the connection to the pool rather than severing the socket).
+              </p>
+
+              <div class="diagram-canvas">
+                <div class="diagram-title">THE MODERN JAVA PERSISTENCE STACK EVOLUTION</div>
+                <div class="architecture-flow">
+                  <div class="arch-box">
+                    <div class="box-title">1. Raw JDBC (1997)</div>
+                    <div class="box-desc">java.sql.* • Manual connections • ResultSets • SQL boilerplate</div>
+                  </div>
+                  <div class="flow-arrow">➔</div>
+                  <div class="arch-box">
+                    <div class="box-title">2. Spring JdbcTemplate</div>
+                    <div class="box-desc">RowMapper • Automatic resource cleanup • Exception translation</div>
+                  </div>
+                  <div class="flow-arrow">➔</div>
+                  <div class="arch-box highlight">
+                    <div class="box-title">3. Hibernate & JPA</div>
+                    <div class="box-desc">Declarative Entities • Dirty checking • Automatic schema generation</div>
+                  </div>
+                  <div class="flow-arrow">➔</div>
+                  <div class="arch-box highlight">
+                    <div class="box-title">4. Spring Data JPA</div>
+                    <div class="box-desc">Repository interfaces • Generated queries • @Transactional proxies</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+          </article>
+        </div>
+      </section>
+
+      <!-- =============================================================
+           VIEW 3: REVISION CARDS & CHEAT SHEETS
+      ============================================================== -->
+      <section id="revision-view" class="view-container">
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2 style="font-size: 1.8rem; font-weight: 800; color: var(--ink-blue);">⚡ High-Yield Revision Deck</h2>
+          <p style="color: var(--pencil-light); font-size: 0.95rem;">Fast interview recall cards, common pitfalls, and API behavior matrices.</p>
+        </div>
+
+        <div class="revision-grid">
+          <!-- Card 1 -->
+          <div class="rev-card">
+            <div>
+              <div class="sketch-badge badge-blue">CORE CONCEPTS</div>
+              <h3 class="rev-title">JDBC Architecture & Polymorphism</h3>
+              <ul class="rev-list">
+                <li>All application code imports only from <code>java.sql.*</code> interfaces.</li>
+                <li>Vendor driver JAR (e.g. <code>mysql-connector-j</code>) supplies concrete class implementations.</li>
+                <li>Enables switching from MySQL to PostgreSQL without changing business queries.</li>
+              </ul>
+            </div>
+            <div style="font-size: 0.8rem; color: #B45309; font-weight: 700;">Trap: Never import vendor packages (com.mysql.cj.*) directly!</div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="rev-card">
+            <div>
+              <div class="sketch-badge badge-yellow">SECURITY</div>
+              <h3 class="rev-title">Statement vs PreparedStatement</h3>
+              <ul class="rev-list">
+                <li><code>Statement</code> concatenates raw strings: vulnerable to SQL Injection!</li>
+                <li><code>PreparedStatement</code> compiles query plan on database first.</li>
+                <li>Placeholders (<code>?</code>) are strictly treated as data literals.</li>
+                <li>Database server caches execution plans, speeding up repeated queries.</li>
+              </ul>
+            </div>
+            <div style="font-size: 0.8rem; color: #15803D; font-weight: 700;">Always use PreparedStatement in production.</div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="rev-card">
+            <div>
+              <div class="sketch-badge badge-green">EXECUTION TRIAD</div>
+              <h3 class="rev-title">The Three Execution Methods</h3>
+              <ul class="rev-list">
+                <li><code>executeUpdate()</code>: Returns <code>int</code> (rows affected) for DML.</li>
+                <li><code>executeQuery()</code>: Returns <code>ResultSet</code> for SELECT.</li>
+                <li><code>execute()</code>: Returns <code>boolean</code> (<code>true</code> = ResultSet, <code>false</code> = update count).</li>
+              </ul>
+            </div>
+            <div style="font-size: 0.8rem; color: #D12828; font-weight: 700;">execute() does NOT return true on success!</div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="rev-card">
+            <div>
+              <div class="sketch-badge badge-blue">CURSOR MECHANICS</div>
+              <h3 class="rev-title">ResultSet Traversal Rules</h3>
+              <ul class="rev-list">
+                <li>Cursor starts at <code>beforeFirst</code>; calling getters before <code>rs.next()</code> throws <code>SQLException</code>.</li>
+                <li><code>rs.next()</code> advances pointer and returns <code>false</code> after last row.</li>
+                <li>Column indexes are <strong>1-based</strong> (e.g. <code>rs.getString(1)</code>), not 0-based.</li>
+              </ul>
+            </div>
+            <div style="font-size: 0.8rem; color: #1E40AF; font-weight: 700;">Use column labels over ordinals for resilience.</div>
+          </div>
+
+          <!-- Card 5 -->
+          <div class="rev-card">
+            <div>
+              <div class="sketch-badge badge-yellow">RESOURCE LEAKS</div>
+              <h3 class="rev-title">AutoCloseable & Cleanup</h3>
+              <ul class="rev-list">
+                <li>Connection, Statement, and ResultSet hold OS socket file descriptors.</li>
+                <li>Unclosed connections starve database connection pools.</li>
+                <li>Modern standard: Java 7 <code>try-with-resources</code> auto-closes in reverse order.</li>
+              </ul>
+            </div>
+            <div style="font-size: 0.8rem; color: #15803D; font-weight: 700;">No finally blocks needed with try-with-resources.</div>
+          </div>
+
+          <!-- Card 6 -->
+          <div class="rev-card">
+            <div>
+              <div class="sketch-badge badge-red">ACID TRANSACTIONS</div>
+              <h3 class="rev-title">Manual Transaction Protocol</h3>
+              <ul class="rev-list">
+                <li>Step 1: <code>conn.setAutoCommit(false);</code></li>
+                <li>Step 2: Execute transactional operations inside try block.</li>
+                <li>Step 3: <code>conn.commit();</code> upon complete success.</li>
+                <li>Step 4: <code>conn.rollback();</code> inside the <code>catch (SQLException)</code> block.</li>
+              </ul>
+            </div>
+            <div style="font-size: 0.8rem; color: #D12828; font-weight: 700;">Spring's @Transactional uses these exact primitives!</div>
+          </div>
+
+          <!-- Card 7 -->
+          <div class="rev-card">
+            <div>
+              <div class="sketch-badge badge-green">PERFORMANCE</div>
+              <h3 class="rev-title">Why SELECT * is an Anti-Pattern</h3>
+              <ul class="rev-list">
+                <li>Pulls unnecessary byte payloads across network sockets.</li>
+                <li>Prevents database from leveraging Index-Only Covering Scans.</li>
+                <li>Schema alterations break positional column ordinal lookups.</li>
+              </ul>
+            </div>
+            <div style="font-size: 0.8rem; color: #B45309; font-weight: 700;">Always explicitly project needed columns.</div>
+          </div>
+
+          <!-- Card 8 -->
+          <div class="rev-card">
+            <div>
+              <div class="sketch-badge badge-blue">CONNECTION POOLS</div>
+              <h3 class="rev-title">HikariCP vs DriverManager</h3>
+              <ul class="rev-list">
+                <li><code>DriverManager.getConnection()</code> opens new TCP socket on every call (20-60ms).</li>
+                <li>HikariCP holds a warm pool of open sockets (borrow time: sub-millisecond).</li>
+                <li><code>conn.close()</code> on a pooled connection returns it to the pool via a Dynamic Proxy.</li>
+              </ul>
+            </div>
+            <div style="font-size: 0.8rem; color: #1E40AF; font-weight: 700;">Standard pool size is usually 10-20 connections!</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============================================================
+           VIEW 4: FLASHCARDS (INTERACTIVE 3D FLIP)
+      ============================================================== -->
+      <section id="flashcards-view" class="view-container">
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <h2 style="font-size: 1.8rem; font-weight: 800; color: var(--ink-blue);">🗂️ Interactive Concept Flashcards</h2>
+          <p style="color: var(--pencil-light); font-size: 0.95rem;">Click card or press <strong>Space</strong> to flip. Test your instant recall!</p>
+        </div>
+
+        <div class="flashcard-wrap">
+          <div class="flashcard" id="activeFlashcard" title="Click or press Space to flip">
+            <!-- Front Face -->
+            <div class="card-face card-front">
+              <div>
+                <div class="sketch-badge badge-blue" id="fcCategory">JDBC ARCHITECTURE</div>
+                <div style="font-size: 0.8rem; color: var(--pencil-light); margin-top: 0.25rem;" id="fcProgress">Card 1 of 8</div>
+              </div>
+              <div style="text-align: center; padding: 1rem 0;">
+                <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--ink-blue);" id="fcQuestion">
+                  Why does JDBC column indexing start at 1 instead of 0?
+                </h3>
+              </div>
+              <div style="text-align: center; font-size: 0.85rem; color: var(--pencil-light); font-weight: 600;">
+                🔄 Click to reveal answer
+              </div>
+            </div>
+
+            <!-- Back Face -->
+            <div class="card-face card-back">
+              <div>
+                <div class="sketch-badge badge-yellow">EXPLANATION & PROOF</div>
+                <div style="font-size: 0.8rem; color: #B45309; margin-top: 0.25rem;">Answer Revealed</div>
+              </div>
+              <div style="padding: 1rem 0; font-size: 1.05rem; color: var(--pencil-grey); line-height: 1.6;" id="fcAnswer">
+                JDBC mirrors the <strong>ANSI SQL standard</strong>, where relational database columns and parameters are traditionally numbered starting at 1. Array offsets in C/Java start at 0 (byte displacement), but SQL is set-based mathematical notation where 1st column = index 1.
+              </div>
+              <div style="text-align: center; font-size: 0.85rem; color: #B45309; font-weight: 700;">
+                💡 Always remember: 1-indexed for JDBC!
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flashcard-actions">
+          <button class="slide-nav-btn" id="fcPrevBtn">◀ Previous</button>
+          <button class="slide-nav-btn" id="fcFlipBtn">🔄 Flip (Space)</button>
+          <button class="slide-nav-btn" id="fcNextBtn">Next ▶</button>
+        </div>
+      </section>
+
+      <!-- =============================================================
+           VIEW 5: MASTERCLASS QUIZ
+      ============================================================== -->
+      <section id="quiz-view" class="view-container">
+        <div class="quiz-wrap">
+          <div style="text-align: center; margin-bottom: 2rem;">
+            <h2 style="font-size: 1.8rem; font-weight: 800; color: var(--ink-blue);">🧪 Masterclass Knowledge Check</h2>
+            <p style="color: var(--pencil-light); font-size: 0.95rem;">10 rigorous scenario questions testing low-level JDBC and database mechanics.</p>
+          </div>
+
+          <div id="quizContainer">
+            <!-- Dynamically populated by JS quiz engine -->
+          </div>
+
+          <div style="text-align: center; margin-top: 1.5rem;" id="quizFinalWrap">
+            <!-- Score summary displays when all questions answered -->
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Quick Notepad Drawer (localStorage-persisted) -->
+  <div class="drawer-overlay" id="notepadOverlay"></div>
+  <aside class="notes-drawer" id="notepadDrawer">
+    <div class="drawer-header">
+      <div style="display: flex; align-items: center; gap: 0.4rem;">
+        <span>📝</span>
+        <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--ink-blue);">Quick Notes Drawer</h3>
+      </div>
+      <button class="action-icon-btn" id="closeNotepadBtn" style="width: 30px; height: 30px;" title="Close (Esc)">✕</button>
+    </div>
+    <p style="font-size: 0.8rem; color: var(--pencil-light); margin-bottom: 0.75rem;">
+      Auto-saved to your browser. Use for interview prep snippets and notes!
+    </p>
+    <textarea class="scratchpad-area" id="scratchpadArea" placeholder="Type your notes or questions here..."></textarea>
+    <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+      <button class="sim-btn" id="clearNotesBtn">Clear</button>
+      <button class="sim-btn" id="downloadNotesBtn">💾 Download .txt</button>
+    </div>
+  </aside>
+
+  <!-- Search Modal -->
+  <div class="modal-overlay" id="searchModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span>🔍</span>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--ink-blue);">Search Masterclass Notes</h3>
+        </div>
+        <button class="action-icon-btn" id="closeSearchBtn" style="width: 32px; height: 32px;">✕</button>
+      </div>
+      <input type="text" class="sim-input" id="searchQueryInput" placeholder="Search topics (e.g. PreparedStatement, SQL Injection, ResultSet, commit)..." autofocus>
+      <div style="flex: 1; overflow-y: auto; margin-top: 1rem; max-height: 400px;" id="searchResultsList">
+        <p style="font-size: 0.85rem; color: var(--pencil-light); text-align: center; padding: 1.5rem 0;">Type at least 2 characters to search across slides, textbook, and revision cards.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide Overview Modal -->
+  <div class="modal-overlay" id="overviewModal">
+    <div class="modal-card" style="max-width: 800px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span>🗂️</span>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--ink-blue);">Slide Deck Overview (22 Slides)</h3>
+        </div>
+        <button class="action-icon-btn" id="closeOverviewBtn" style="width: 32px; height: 32px;">✕</button>
+      </div>
+      <div class="overview-grid" id="overviewGrid">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Footer -->
+  <footer class="app-footer">
+    <div class="container">
+      <p style="font-weight: 700; color: var(--ink-blue); margin-bottom: 0.25rem;">Java Database Connectivity (JDBC) from First Principles • Masterclass Note</p>
+      <p>Handcrafted in Sketch Note aesthetic • Designed with Lexend & JetBrains Mono • Part of the Java & JVM Curriculum</p>
+    </div>
+  </footer>
+
+  <!-- =============================================================
+       VANILLA JAVASCRIPT: CONTROLLERS & SIMULATORS
+  ============================================================== -->
+  <script>
+    /* --- SLIDE DATA (22 Comprehensive Slides) --- */
+    const SLIDES_DATA = [
+      {
+        num: 1,
+        category: "ARCHITECTURE OVERVIEW",
+        badge: "badge-blue",
+        title: "The JVM-Database Bridge: Connecting Java to Relational DBs",
+        content: `
+          <div style="padding: 1rem 0;">
+            <p style="font-size: 1.15rem; color: var(--pencil-grey); margin-bottom: 1.5rem;">
+              Welcome to the <strong>Java Database Connectivity (JDBC)</strong> deep dive. In this masterclass, we strip away all high-level frameworks (Spring Boot, Hibernate, JPA) to understand how raw Java communicates with relational database servers over network sockets.
+            </p>
+            <div class="diagram-canvas">
+              <div class="diagram-title">CORE LEARNING JOURNEY</div>
+              <div class="architecture-flow">
+                <div class="arch-box highlight">
+                  <div class="box-title">1. Socket Layer</div>
+                  <div class="box-desc">JVM to RDBMS via TCP/IP 3306</div>
+                </div>
+                <div class="flow-arrow">➔</div>
+                <div class="arch-box">
+                  <div class="box-title">2. Abstraction</div>
+                  <div class="box-desc">java.sql.* interfaces & Type 4 Driver</div>
+                </div>
+                <div class="flow-arrow">➔</div>
+                <div class="arch-box highlight">
+                  <div class="box-title">3. Statements</div>
+                  <div class="box-desc">PreparedStatement & SQL Injection</div>
+                </div>
+                <div class="flow-arrow">➔</div>
+                <div class="arch-box">
+                  <div class="box-title">4. Transactions</div>
+                  <div class="box-desc">ACID commit/rollback & HikariCP</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        num: 2,
+        category: "THE CORE PROBLEM",
+        badge: "badge-red",
+        title: "The Socket Chasm: JVM on Server A vs RDBMS on Server B",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            A Java application runs inside a local operating system process (the JVM). An RDBMS like MySQL runs as an entirely separate background daemon process, often on a separate machine across the data center network.
+          </p>
+          <div class="diagram-canvas">
+            <div class="architecture-flow">
+              <div class="arch-box" style="background: #F0FDF4;">
+                <div class="box-title">Server A: Java App</div>
+                <div class="box-desc">Thread Pool • Object Heaps • Garbage Collector</div>
+              </div>
+              <div class="flow-arrow">⇄ TCP/IP Socket ⇄</div>
+              <div class="arch-box" style="background: #FEF2F2;">
+                <div class="box-title">Server B: MySQL Server</div>
+                <div class="box-desc">Port 3306 • Query Optimizer • InnoDB Storage Engine</div>
+              </div>
+            </div>
+          </div>
+          <div class="callout callout-note">
+            <div class="callout-title">📌 Key Takeaway</div>
+            <p>Because they reside in separate process spaces, all communication requires a serialized network wire protocol over TCP sockets. Java cannot simply read database memory directly.</p>
+          </div>
+        `
+      },
+      {
+        num: 3,
+        category: "DATA REPRESENTATION",
+        badge: "badge-yellow",
+        title: "The Object-Relational Impedance Mismatch",
+        content: `
+          <p style="margin-bottom: 1rem;">Java and SQL think in two entirely incompatible conceptual models:</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0;">
+            <div class="arch-box">
+              <div class="box-title" style="color: #0E2A5C;">Java Domain Model</div>
+              <div class="box-desc" style="text-align: left; margin-top: 0.5rem; line-height: 1.6;">
+                • Objects & References<br>
+                • Inheritance & Polymorphism<br>
+                • Encapsulation (Private fields)<br>
+                • In-memory collections (List, Set, Map)
+              </div>
+            </div>
+            <div class="arch-box">
+              <div class="box-title" style="color: #B45309;">Relational Database Model</div>
+              <div class="box-desc" style="text-align: left; margin-top: 0.5rem; line-height: 1.6;">
+                • Tables, Rows & Columns<br>
+                • Primary & Foreign Keys<br>
+                • Set-based relational algebra<br>
+                • Disk pages and B+Tree indexes
+              </div>
+            </div>
+          </div>
+          <p>JDBC is the foundational translation layer that converts relational table rows into typed Java objects and vice-versa.</p>
+        `
+      },
+      {
+        num: 4,
+        category: "VENDOR FRAGMENTATION",
+        badge: "badge-blue",
+        title: "Vendor Diversity & Why Direct Calls Are Impossible",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            There is no single universal database protocol. Every vendor implements their own proprietary wire packet format:
+          </p>
+          <table class="table-sketch">
+            <thead>
+              <tr>
+                <th>Database</th>
+                <th>Default Port</th>
+                <th>Wire Protocol Format</th>
+                <th>Authentication Mechanism</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>MySQL</strong></td>
+                <td>3306</td>
+                <td>MySQL Client/Server Binary Protocol</td>
+                <td>caching_sha2_password / mysql_native_password</td>
+              </tr>
+              <tr>
+                <td><strong>PostgreSQL</strong></td>
+                <td>5432</td>
+                <td>PostgreSQL Frontend/Backend Protocol 3.0</td>
+                <td>SCRAM-SHA-256 / MD5</td>
+              </tr>
+              <tr>
+                <td><strong>Oracle DB</strong></td>
+                <td>1521</td>
+                <td>Transparent Network Substrate (TNS)</td>
+                <td>O5LOGON / Kerberos / Native Encryption</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="margin-top: 1rem;">
+            Without a unified standard, writing portable Java software across different databases would be mathematically intractable.
+          </p>
+        `
+      },
+      {
+        num: 5,
+        category: "POLYMORPHISM",
+        badge: "badge-green",
+        title: "Java's Superpower: Interface Decoupling",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            Just as <code>java.util.List</code> hides whether you are using an <code>ArrayList</code> or a <code>LinkedList</code>, JDBC defines pure interfaces in <code>java.sql.*</code>:
+          </p>
+          <div class="code-box">
+            <div class="code-label">JAVA COLLECTION ANALOGY VS JDBC</div>
+<pre><code>// Collection Framework Polymorphism
+List&lt;String&gt; list = new ArrayList&lt;&gt;(); // Caller interacts strictly with 'List' interface
+list.add("First Principle");
+
+// JDBC API Polymorphism
+Connection conn = DriverManager.getConnection(url, user, pass); 
+// Returns a concrete vendor class (e.g. com.mysql.cj.jdbc.ConnectionImpl)
+// Caller interacts strictly with 'java.sql.Connection' interface!
+Statement stmt = conn.createStatement();</code></pre>
+          </div>
+          <p>
+            The vendor supplies the driver JAR containing concrete classes that implement these interfaces. Your application remains 100% database-agnostic.
+          </p>
+        `
+      },
+      {
+        num: 6,
+        category: "ARCHITECTURE",
+        badge: "badge-blue",
+        title: "The 4-Tier JDBC Architecture",
+        content: `
+          <div class="diagram-canvas">
+            <div class="diagram-title">LAYERED JDBC STACK</div>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div class="arch-box highlight">
+                <div class="box-title">Tier 1: Java Application Code</div>
+                <div class="box-desc">Calls standard methods on java.sql.Connection, PreparedStatement, ResultSet</div>
+              </div>
+              <div class="arch-box" style="background: #E0F2FE;">
+                <div class="box-title">Tier 2: JDBC API (java.sql & javax.sql)</div>
+                <div class="box-desc">Standard Java SE specification interfaces and DriverManager utility</div>
+              </div>
+              <div class="arch-box" style="background: #FEF3C7;">
+                <div class="box-title">Tier 3: JDBC Driver (Type 4 Pure Java Socket Driver)</div>
+                <div class="box-desc">Vendor JAR (mysql-connector-j) translating method calls to proprietary wire protocol</div>
+              </div>
+              <div class="arch-box" style="background: #DCFCE7;">
+                <div class="box-title">Tier 4: Relational Database Server</div>
+                <div class="box-desc">External database engine executing queries on disk storage (MySQL, Postgres, Oracle)</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        num: 7,
+        category: "COORDINATES",
+        badge: "badge-yellow",
+        title: "The 3 Connection Coordinates & URL Structure",
+        content: `
+          <p style="margin-bottom: 1rem;">To establish a database connection, you must supply three exact parameters:</p>
+          <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem; line-height: 1.8;">
+            <li><strong>JDBC URL:</strong> Identifies protocol, driver, host, port, and database name.</li>
+            <li><strong>Username:</strong> Database server user account (e.g. <code>root</code>).</li>
+            <li><strong>Password:</strong> User credentials.</li>
+          </ol>
+          <div class="code-box">
+            <div class="code-label">JDBC URL DECONSTRUCTION</div>
+<pre><code>String url = "jdbc:mysql://localhost:3306/student_db";
+//   │      │        │        │      │
+//   │      │        │        │      └── Target Database Schema Name
+//   │      │        │        └───────── MySQL Default Listening Port
+//   │      │        └────────────────── Hostname or IP Address
+//   │      └─────────────────────────── Subprotocol (Driver Identifier)
+//   └────────────────────────────────── Top-level Java Protocol Specifier</code></pre>
+          </div>
+        `
+      },
+      {
+        num: 8,
+        category: "DRIVER MANAGER",
+        badge: "badge-blue",
+        title: "DriverManager.getConnection() & Socket Handshake",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            When your code invokes <code>DriverManager.getConnection(url, user, pass)</code>, the following low-level sequence executes:
+          </p>
+          <div style="font-size: 0.95rem; line-height: 1.8; margin-left: 1rem;">
+            1. <strong>Driver Discovery:</strong> <code>DriverManager</code> iterates through all registered drivers on the classpath.<br>
+            2. <strong>URL Acceptance:</strong> Each driver's <code>acceptsURL(url)</code> is tested. MySQL driver recognizes <code>jdbc:mysql:</code>.<br>
+            3. <strong>TCP Socket Opening:</strong> The driver opens a TCP socket to <code>localhost:3306</code>.<br>
+            4. <strong>Handshake & Auth:</strong> Driver exchanges SSL certificates and passes credentials.<br>
+            5. <strong>Connection Return:</strong> A concrete <code>ConnectionImpl</code> instance wrapping the socket is returned!
+          </div>
+        `
+      },
+      {
+        num: 9,
+        category: "STATEMENT NAIVE",
+        badge: "badge-yellow",
+        title: "Statement vs PreparedStatement Overview",
+        content: `
+          <p style="margin-bottom: 1rem;">JDBC provides two primary mechanisms for executing SQL commands:</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0;">
+            <div class="arch-box" style="border-color: #B91C1C;">
+              <div class="box-title" style="color: #B91C1C;">java.sql.Statement</div>
+              <div class="box-desc" style="text-align: left; margin-top: 0.5rem; line-height: 1.6;">
+                • Plain string submission<br>
+                • Vulnerable to SQL Injection<br>
+                • Re-parsed and recompiled by DB on every execution<br>
+                • Awkward string concatenation for parameters
+              </div>
+            </div>
+            <div class="arch-box highlight" style="border-color: #15803D;">
+              <div class="box-title" style="color: #15803D;">java.sql.PreparedStatement</div>
+              <div class="box-desc" style="text-align: left; margin-top: 0.5rem; line-height: 1.6;">
+                • Parameterized query template with <code>?</code><br>
+                • Immune to SQL Injection<br>
+                • Database compiles query plan once<br>
+                • Strongly-typed parameter setters (<code>setString</code>, <code>setInt</code>)
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        num: 10,
+        category: "EXECUTION METHODS",
+        badge: "badge-green",
+        title: "The Execution Method Triad",
+        content: `
+          <p style="margin-bottom: 1rem;">Never confuse these three methods:</p>
+          <table class="table-sketch">
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>Return Type</th>
+                <th>Primary Use Case</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>executeUpdate()</code></td>
+                <td><code>int</code> (Rows Count)</td>
+                <td><code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code> (DML)</td>
+              </tr>
+              <tr>
+                <td><code>executeQuery()</code></td>
+                <td><code>ResultSet</code></td>
+                <td><code>SELECT</code> (Queries returning rows)</td>
+              </tr>
+              <tr>
+                <td><code>execute()</code></td>
+                <td><code>boolean</code></td>
+                <td>General Purpose (true = ResultSet, false = Update Count)</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout callout-warning">
+            <div class="callout-title">⚠️ Interview Trick Question</div>
+            <p>If you call <code>executeUpdate()</code> for an <code>UPDATE</code> statement that matched 0 rows, it returns <code>0</code>, NOT an error!</p>
+          </div>
+        `
+      },
+      {
+        num: 11,
+        category: "DML MECHANICS",
+        badge: "badge-blue",
+        title: "executeUpdate() Deep Dive (INSERT, UPDATE, DELETE)",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            When executing DML queries, the database evaluates how many row records were created, modified, or purged:
+          </p>
+          <div class="code-box">
+            <div class="code-label">CRUD EXECUTEUPDATE EXAMPLE</div>
+<pre><code>// 1. CREATE (INSERT)
+String insertSql = "INSERT INTO students (name, email, age) VALUES ('Aditya', 'a@gmail.com', 28)";
+int insertCount = stmt.executeUpdate(insertSql); // Returns 1
+
+// 2. UPDATE
+String updateSql = "UPDATE students SET age = 30 WHERE id = 1";
+int updateCount = stmt.executeUpdate(updateSql); // Returns 1 if ID 1 existed, 0 otherwise
+
+// 3. DELETE
+String deleteSql = "DELETE FROM students WHERE id = 1";
+int deleteCount = stmt.executeUpdate(deleteSql); // Returns 1 if deleted</code></pre>
+          </div>
+        `
+      },
+      {
+        num: 12,
+        category: "RESULTSET CURSOR",
+        badge: "badge-green",
+        title: "executeQuery() & The ResultSet Cursor Architecture",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            <code>ResultSet</code> does NOT hold a list of Java objects. It manages a database cursor pointing into a buffer of raw relational rows:
+          </p>
+          <div class="diagram-canvas">
+            <div style="font-family: var(--font-mono); font-size: 0.95rem; line-height: 1.8;">
+              <div style="background: #FEE2E2; padding: 0.25rem 0.5rem; border-radius: 4px;">[Cursor State: beforeFirst] ➔ Positioned before Row 1. Calling rs.getString() here THROWS EXCEPTION!</div>
+              <div style="margin-left: 1rem;">↓ rs.next() returns true</div>
+              <div style="background: #FEF3C7; padding: 0.25rem 0.5rem; border-radius: 4px;">Row 1: [id: 1, name: "Aditya", email: "a@gmail.com", age: 28]</div>
+              <div style="margin-left: 1rem;">↓ rs.next() returns true</div>
+              <div style="background: #FEF3C7; padding: 0.25rem 0.5rem; border-radius: 4px;">Row 2: [id: 2, name: "Rohit", email: "r@gmail.com", age: 26]</div>
+              <div style="margin-left: 1rem;">↓ rs.next() returns false</div>
+              <div style="background: #E2E8F0; padding: 0.25rem 0.5rem; border-radius: 4px;">[Cursor State: afterLast] ➔ Traversal complete! Loop exits.</div>
+            </div>
+          </div>
+        `
+      },
+      {
+        num: 13,
+        category: "COLUMN INDEXING",
+        badge: "badge-yellow",
+        title: "1-Based Indexing & Column Retrieval",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            Relational databases and ANSI SQL use <strong>1-based ordinals</strong>.
+          </p>
+          <div class="code-box">
+            <div class="code-label">ORDINAL VS LABEL EXTRACTION</div>
+<pre><code>// Given query: SELECT id, name, email, age FROM students;
+
+// Method A: Named Column Labels (Resilient & Readable)
+long id = rs.getLong("id");
+String name = rs.getString("name");
+String email = rs.getString("email");
+int age = rs.getInt("age");
+
+// Method B: 1-Based Column Indexing
+long idOrd = rs.getLong(1);     // Column 1 is 'id' (NOT Column 0!)
+String nameOrd = rs.getString(2); // Column 2 is 'name'
+// rs.getString(0) THROWS SQLException: Column Index out of range!</code></pre>
+          </div>
+        `
+      },
+      {
+        num: 14,
+        category: "OBJECT MAPPING",
+        badge: "badge-blue",
+        title: "Object-Relational Mapping: Transforming Rows to POJOs",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            This is the historical birthplace of all Object-Relational Mappers (Hibernate, Spring Data):
+          </p>
+          <div class="code-box">
+            <div class="code-label">ROW MAPPER PATTERN</div>
+<pre><code>private Student mapRow(ResultSet rs) throws SQLException {
+    Student student = new Student();
+    student.setId(rs.getLong("id"));
+    student.setName(rs.getString("name"));
+    student.setEmail(rs.getString("email"));
+    student.setAge(rs.getInt("age"));
+    return student;
+}
+
+// In repository traversal:
+List&lt;Student&gt; students = new ArrayList&lt;&gt;();
+while (rs.next()) {
+    students.add(mapRow(rs));
+}</code></pre>
+          </div>
+        `
+      },
+      {
+        num: 15,
+        category: "BEST PRACTICES",
+        badge: "badge-red",
+        title: "The Anti-Pattern: SELECT * in Production Code",
+        content: `
+          <p style="margin-bottom: 1rem;">Never write <code>SELECT * FROM table</code> in production backend code. Always explicitly project required columns:</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1.5rem 0;">
+            <div class="arch-box" style="border-color: #B91C1C;">
+              <div class="box-title" style="color: #B91C1C;">❌ SELECT * (Bad)</div>
+              <div class="box-desc" style="text-align: left; line-height: 1.6;">
+                • Incurs excessive network socket I/O<br>
+                • Breaks 1-based ordinal lookups on schema migration<br>
+                • Prevents database index-only covering scans<br>
+                • Unclear contract for fellow developers
+              </div>
+            </div>
+            <div class="arch-box highlight" style="border-color: #15803D;">
+              <div class="box-title" style="color: #15803D;">✅ SELECT id, name, email (Good)</div>
+              <div class="box-desc" style="text-align: left; line-height: 1.6;">
+                • Only requested bytes transmitted<br>
+                • Resilient to adding columns to table<br>
+                • Highly optimized query optimizer execution<br>
+                • Self-documenting code
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        num: 16,
+        category: "SECURITY EXPLOIT",
+        badge: "badge-red",
+        title: "SQL Injection: The Anatomy of a Breach",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            When inputs are concatenated directly into SQL queries, user data alters the database's Abstract Syntax Tree (AST):
+          </p>
+          <div class="code-box">
+            <div class="code-label">MALICIOUS INPUT CONCATENATION</div>
+<pre><code>// Vulnerable query string:
+String sql = "SELECT * FROM students WHERE email = '" + userEmail + "'";
+
+// Attacker enters:
+userEmail = "admin@example.com' OR '1'='1";
+
+// Database receives:
+SELECT * FROM students WHERE email = 'admin@example.com' OR '1'='1';
+// Since '1'='1' is true for every row, ALL confidential records leak!</code></pre>
+          </div>
+          <div class="callout callout-danger">
+            <div class="callout-title">🚨 The Root Cause</div>
+            <p>The SQL compiler cannot distinguish between the developer's SQL commands and the untrusted user's string data.</p>
+          </div>
+        `
+      },
+      {
+        num: 17,
+        category: "SECURITY DEFENSE",
+        badge: "badge-green",
+        title: "PreparedStatement: Precompilation & Parameter Placeholders",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            <code>PreparedStatement</code> completely solves this by precompiling the SQL structure <strong>before</strong> binding parameters:
+          </p>
+          <div class="diagram-canvas">
+            <div class="diagram-title">QUERY COMPILATION ISOLATION</div>
+            <div style="font-family: var(--font-mono); font-size: 0.95rem; line-height: 1.8;">
+              <div style="color: #1E40AF; font-weight: 700;">1. Database compiles query plan:</div>
+              <div style="margin-left: 1rem;">SELECT * FROM students WHERE email = [PLACEHOLDER_1]</div>
+              <div style="color: #15803D; font-weight: 700; margin-top: 0.5rem;">2. Parameter injected strictly as a string literal:</div>
+              <div style="margin-left: 1rem;">PLACEHOLDER_1 ➔ Value: "admin' OR '1'='1"</div>
+              <div style="color: #B45309; font-weight: 700; margin-top: 0.5rem;">3. Result:</div>
+              <div style="margin-left: 1rem;">Searches for a student whose literal email is "admin' OR '1'='1". Zero injection possible!</div>
+            </div>
+          </div>
+        `
+      },
+      {
+        num: 18,
+        category: "PARAMETER BINDING",
+        badge: "badge-blue",
+        title: "Typed Setters & 1-Indexed Placeholders",
+        content: `
+          <p style="margin-bottom: 1rem;">PreparedStatement provides type-safe setters for all database primitives:</p>
+          <div class="code-box">
+            <div class="code-label">PREPAREDSTATEMENT SETTER SUITE</div>
+<pre><code>String sql = "INSERT INTO students (name, email, age, registered_at) VALUES (?, ?, ?, ?)";
+PreparedStatement pstmt = conn.prepareStatement(sql);
+
+pstmt.setString(1, "Aditya");           // 1st placeholder ?
+pstmt.setString(2, "aditya@gmail.com");  // 2nd placeholder ?
+pstmt.setInt(3, 28);                    // 3rd placeholder ?
+pstmt.setTimestamp(4, new Timestamp(System.currentTimeMillis())); // 4th ?
+
+// Handling null values safely:
+pstmt.setNull(3, java.sql.Types.INTEGER);</code></pre>
+          </div>
+        `
+      },
+      {
+        num: 19,
+        category: "RESOURCE LEAKS",
+        badge: "badge-red",
+        title: "The Danger of Dangling Sockets & Descriptor Leaks",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            Why must database resources be explicitly closed?
+          </p>
+          <ul style="margin-left: 1.5rem; line-height: 1.8; margin-bottom: 1.5rem;">
+            <li><strong>Operating System File Descriptors:</strong> Each open socket consumes an OS file descriptor. When exhausted, the server crashes with <code>java.net.SocketException: Too many open files</code>.</li>
+            <li><strong>Database Connection Limits:</strong> MySQL limits max connections (e.g. <code>max_connections=151</code>). Leaking connections locks out all users.</li>
+            <li><strong>Server Cursor Locks:</strong> Unclosed <code>ResultSet</code> instances hold locks and memory tables on the DB server.</li>
+          </ul>
+        `
+      },
+      {
+        num: 20,
+        category: "CLEAN CODE",
+        badge: "badge-green",
+        title: "Modern Cleanup: try-with-resources (AutoCloseable)",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            In Java 7+, all JDBC interfaces implement <code>java.lang.AutoCloseable</code>:
+          </p>
+          <div class="code-box">
+            <div class="code-label">AUTO-CLOSING RESOURCE PATTERN</div>
+<pre><code>String sql = "SELECT id, name FROM students WHERE id = ?";
+
+// Connection, PreparedStatement, and ResultSet close automatically
+// in strict reverse order of declaration when block exits!
+try (Connection conn = DriverManager.getConnection(url, user, pass);
+     PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+    pstmt.setLong(1, 101L);
+
+    try (ResultSet rs = pstmt.executeQuery()) {
+        while (rs.next()) {
+            System.out.println("ID: " + rs.getLong(1) + ", Name: " + rs.getString(2));
+        }
+    } // rs.close() called automatically here
+
+} // pstmt.close() and conn.close() called automatically here
+catch (SQLException e) {
+    e.printStackTrace();
+}</code></pre>
+          </div>
+        `
+      },
+      {
+        num: 21,
+        category: "ACID TRANSACTIONS",
+        badge: "badge-yellow",
+        title: "Database Transactions: setAutoCommit(false), commit & rollback",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            Atomic multi-step operations require turning off default auto-commit:
+          </p>
+          <div class="code-box">
+            <div class="code-label">TRANSACTION ATOMICITY PRIMITIVES</div>
+<pre><code>conn.setAutoCommit(false); // 1. Start Transaction Boundary
+
+try {
+    debitAccount(conn, fromId, 1000);
+    creditAccount(conn, toId, 1000);
+
+    conn.commit(); // 2. Both succeeded ➔ Persist changes atomically
+    System.out.println("Transfer complete!");
+} catch (SQLException e) {
+    conn.rollback(); // 3. Failure ➔ Revert database to original state
+    System.err.println("Transfer failed, rolled back!");
+} finally {
+    conn.setAutoCommit(true); // 4. Restore default state
+}</code></pre>
+          </div>
+        `
+      },
+      {
+        num: 22,
+        category: "PRODUCTION ROADMAP",
+        badge: "badge-blue",
+        title: "The Road to Production: Connection Pools (HikariCP) & JPA",
+        content: `
+          <p style="margin-bottom: 1rem;">
+            Congratulations! You now understand the low-level foundation upon which all modern Java persistence libraries operate:
+          </p>
+          <div class="diagram-canvas">
+            <div class="diagram-title">WHERE WE GO FROM HERE</div>
+            <div style="font-size: 0.95rem; line-height: 1.8;">
+              • <strong>HikariCP:</strong> Sits in front of <code>DriverManager</code> to eliminate the 30ms socket handshake on every HTTP request.<br>
+              • <strong>Spring JdbcTemplate:</strong> Wraps <code>PreparedStatement</code> and <code>ResultSet</code> to eliminate repetitive try-catch boilerplate.<br>
+              • <strong>Hibernate & JPA:</strong> Replaces manual <code>mapRow()</code> methods by using Reflection and Annotations (<code>@Entity</code>, <code>@Id</code>).<br>
+              • <strong>Spring Data JPA:</strong> Generates JDBC repository implementations dynamically at runtime!
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: 1.5rem;">
+            <a href="#reader-view" class="sim-btn" onclick="switchView('reader')">📖 Read Complete Textbook</a>
+            <a href="#quiz-view" class="sim-btn" onclick="switchView('quiz')" style="margin-left: 0.5rem;">🧪 Take 10-Question Quiz</a>
+          </div>
+        `
+      }
+    ];
+
+    /* --- FLASHCARD DATA (8 High-Yield Cards) --- */
+    const FLASHCARDS_DATA = [
+      {
+        category: "INDEXING",
+        q: "Why are JDBC column and parameter indexes 1-based instead of 0-based?",
+        a: "JDBC adopts the ANSI SQL standard convention where relational table columns are numbered 1 to N. Array index 0 represents memory offset in C/Java, whereas SQL is mathematical set theory where the first attribute is column 1."
+      },
+      {
+        category: "API SEMANTICS",
+        q: "What does Statement.execute(sql) return, and what does the return value signify?",
+        a: "It returns a boolean. A return value of TRUE means the first result is a ResultSet (use stmt.getResultSet()). A return value of FALSE means the result is an update count or no result (use stmt.getUpdateCount()). It does NOT mean query success/failure!"
+      },
+      {
+        category: "SECURITY",
+        q: "How does PreparedStatement guarantee immunity from SQL Injection?",
+        a: "The SQL grammar is parsed and compiled by the database query planner BEFORE values are bound. User inputs are transmitted strictly as data literals for the placeholders (?), so malicious syntax cannot alter the query's AST."
+      },
+      {
+        category: "CURSOR LIFECYCLE",
+        q: "What is the initial cursor position of a newly returned ResultSet?",
+        a: "The cursor starts at 'beforeFirst' (before the first row of data). You must call rs.next() at least once before attempting to extract any column values with getters, or an SQLException is thrown."
+      },
+      {
+        category: "RESOURCE CLEANUP",
+        q: "In what exact order do resources close when declared in try-with-resources?",
+        a: "In reverse order of their declaration! For: try (Connection c = ...; PreparedStatement ps = ...; ResultSet rs = ...) - rs closes first, then ps, then c."
+      },
+      {
+        category: "TRANSACTIONS",
+        q: "What is the default auto-commit setting in JDBC, and how do you initiate an ACID transaction?",
+        a: "Default is auto-commit = true (every query commits immediately). To start a transaction boundary, call connection.setAutoCommit(false), execute statements, and commit via connection.commit() or rollback on error via connection.rollback()."
+      },
+      {
+        category: "PERFORMANCE",
+        q: "Why is opening connections via DriverManager considered an anti-pattern in production web servers?",
+        a: "Opening a raw TCP socket, performing TLS negotiation, and database user authentication costs 20-60ms per request. Connection pools (like HikariCP) maintain pre-warmed sockets, reducing borrow time to microseconds."
+      },
+      {
+        category: "BEST PRACTICES",
+        q: "Why should SELECT * be avoided in production repository queries?",
+        a: "It transfers unused bytes over the network, prevents database index-only covering scans, and breaks code that relies on positional column ordinals whenever schema tables are altered."
+      }
+    ];
+
+    /* --- QUIZ DATA (10 Scenario Questions) --- */
+    const QUIZ_DATA = [
+      {
+        id: 1,
+        question: "1. A developer calls `rs.getString(0)` on a newly retrieved ResultSet. What happens at runtime?",
+        options: [
+          "It returns the first column ('id') of the current row.",
+          "It returns null without throwing an exception.",
+          "It throws an SQLException because JDBC column indexing is 1-based.",
+          "It returns the primary key column name as metadata."
+        ],
+        correct: 2,
+        explanation: "Correct! JDBC uses 1-based indexing for both ResultSet column getters (1 to N) and PreparedStatement placeholders (1 to N). Index 0 is invalid and throws an SQLException."
+      },
+      {
+        id: 2,
+        question: "2. What is the return value of `stmt.executeUpdate(sql)` when executing an UPDATE statement that matched 0 rows?",
+        options: [
+          "It throws an SQLException stating 'No records found'.",
+          "It returns integer 0.",
+          "It returns boolean false.",
+          "It returns null."
+        ],
+        correct: 1,
+        explanation: "Correct! executeUpdate() returns the count of database rows affected. If 0 rows matched the WHERE clause, it cleanly returns 0."
+      },
+      {
+        id: 3,
+        question: "3. What does `statement.execute(sql)` returning `false` mean?",
+        options: [
+          "The query execution failed due to a SQL syntax error.",
+          "The database connection timed out.",
+          "The result is an update count or there are no results (not a ResultSet).",
+          "Zero rows were affected by the query."
+        ],
+        correct: 2,
+        explanation: "Correct! stmt.execute() returns true if the result is a ResultSet, and false if it is an update count (DML) or no results. Failure throws an SQLException."
+      },
+      {
+        id: 4,
+        question: "4. Where is the ResultSet cursor positioned immediately after `stmt.executeQuery()` returns?",
+        options: [
+          "On the first row of data (Row 1).",
+          "Before the first row of data (beforeFirst state).",
+          "On the last row of data.",
+          "On row index 0."
+        ],
+        correct: 1,
+        explanation: "Correct! The cursor starts positioned before the first row. You must call rs.next() to advance to the first row before calling any column getters."
+      },
+      {
+        id: 5,
+        question: "5. Why does `PreparedStatement` prevent SQL injection attacks like `' OR '1'='1`?",
+        options: [
+          "It uses RegEx to strip quotes and semicolons from user strings.",
+          "The SQL query grammar is compiled by the DB before parameters are bound as data literals.",
+          "It encrypts all parameters using AES before sending them across the socket.",
+          "It converts all queries into HTTP POST requests."
+        ],
+        correct: 1,
+        explanation: "Correct! The database precompiles the query structure. Parameters bound to placeholders (?) are strictly treated as data values and cannot alter the SQL AST."
+      },
+      {
+        id: 6,
+        question: "6. Which interface must a JDBC class implement to be compatible with Java 7 `try-with-resources`?",
+        options: [
+          "java.io.Serializable",
+          "java.lang.Cloneable",
+          "java.lang.AutoCloseable",
+          "java.sql.Disposable"
+        ],
+        correct: 2,
+        explanation: "Correct! Connection, Statement, and ResultSet all extend java.lang.AutoCloseable, allowing try-with-resources to automatically invoke close() upon block termination."
+      },
+      {
+        id: 7,
+        question: "7. When `conn.setAutoCommit(false)` is set, when are changes actually written permanently to the database?",
+        options: [
+          "As soon as each executeUpdate() method call finishes.",
+          "When conn.commit() is explicitly invoked.",
+          "When the connection is garbage collected.",
+          "Only when the JVM process terminates cleanly."
+        ],
+        correct: 1,
+        explanation: "Correct! Disabling auto-commit starts an explicit transaction. Changes are temporary in transaction logs until conn.commit() is called."
+      },
+      {
+        id: 8,
+        question: "8. What is the role of `mysql-connector-j` in a Java JDBC application?",
+        options: [
+          "It provides the user interface for DB graphical management.",
+          "It is a Type 4 pure Java driver implementing java.sql.* interfaces and speaking MySQL's socket wire protocol.",
+          "It replaces the MySQL database engine with an in-memory database.",
+          "It generates Spring Boot JPA repository code at build time."
+        ],
+        correct: 1,
+        explanation: "Correct! mysql-connector-j is a Type 4 pure Java network socket driver providing concrete implementations for the standard JDBC interfaces."
+      },
+      {
+        id: 9,
+        question: "9. Why does `SELECT * FROM students` degrade database performance compared to explicit column projection?",
+        options: [
+          "It forces the database to bypass all indexes and scan all columns across the network.",
+          "It prevents database caching and sends redundant network payloads across the socket.",
+          "It prevents index-only covering scans and increases memory usage in the ResultSet buffer.",
+          "All of the above."
+        ],
+        correct: 3,
+        explanation: "Correct! SELECT * increases payload size, inhibits covering index scans, wastes memory, and causes fragile dependencies on column ordering."
+      },
+      {
+        id: 10,
+        question: "10. In high-concurrency Spring Boot backends, what happens when you call `connection.close()` on a pooled HikariCP connection?",
+        options: [
+          "The underlying physical TCP socket is severed immediately.",
+          "A Dynamic Proxy intercepts the call and returns the connection to the pool without closing the socket.",
+          "The database server daemon is restarted.",
+          "An SQLException is thrown because pooled connections cannot be closed."
+        ],
+        correct: 1,
+        explanation: "Correct! Connection pools wrap raw connections in dynamic proxies. Invoking close() marks the connection as available and returns it to the pool for reuse."
+      }
+    ];
+
+    /* --- APPLICATION STATE --- */
+    let currentSlide = 1;
+    let currentFlashcard = 0;
+    let isFlipped = false;
+    let quizAnswers = {};
+
+    /* --- DOM READY INITIALIZATION --- */
+    document.addEventListener("DOMContentLoaded", () => {
+      initNavigation();
+      initSlideDeck();
+      initFlashcards();
+      initQuiz();
+      initSimulators();
+      initNotepad();
+      initSearch();
+      initKeyboardShortcuts();
+
+      // Check URL hash for initial view
+      const hash = window.location.hash.replace("#", "");
+      if (["presentation", "reader", "revision", "flashcards", "quiz"].includes(hash)) {
+        switchView(hash);
+      }
+    });
+
+    /* --- VIEW SWITCHER --- */
+    function switchView(viewName) {
+      document.querySelectorAll(".view-btn").forEach(btn => {
+        const isActive = btn.dataset.view === viewName;
+        btn.classList.toggle("active", isActive);
+        btn.setAttribute("aria-selected", isActive);
+      });
+
+      document.querySelectorAll(".view-container").forEach(view => {
+        view.classList.toggle("active", view.id === `${viewName}-view`);
+      });
+
+      window.location.hash = viewName;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function initNavigation() {
+      document.querySelectorAll(".view-btn").forEach(btn => {
+        btn.addEventListener("click", () => switchView(btn.dataset.view));
+      });
+    }
+
+    /* --- SLIDE DECK ENGINE --- */
+    function initSlideDeck() {
+      renderSlide(currentSlide);
+
+      document.getElementById("prevSlideBtn").addEventListener("click", () => {
+        if (currentSlide > 1) {
+          currentSlide--;
+          renderSlide(currentSlide);
+        }
+      });
+
+      document.getElementById("nextSlideBtn").addEventListener("click", () => {
+        if (currentSlide < SLIDES_DATA.length) {
+          currentSlide++;
+          renderSlide(currentSlide);
+        }
+      });
+
+      document.getElementById("overviewBtn").addEventListener("click", openOverviewModal);
+      document.getElementById("closeOverviewBtn").addEventListener("click", closeOverviewModal);
+
+      // Populate Overview Grid
+      const overviewGrid = document.getElementById("overviewGrid");
+      overviewGrid.innerHTML = SLIDES_DATA.map(s => `
+        <div class="overview-item" onclick="jumpToSlide(${s.num})">
+          <div style="font-weight: 800; color: var(--ink-blue);">Slide ${s.num}</div>
+          <div style="font-size: 0.75rem; color: var(--pencil-light); margin-top: 0.2rem;">${s.title}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderSlide(index) {
+      const slide = SLIDES_DATA[index - 1];
+      const container = document.getElementById("slideContent");
+      if (!slide || !container) return;
+
+      container.innerHTML = `
+        <div class="slide-header">
+          <div class="slide-title-wrap">
+            <span class="slide-num-pill">${slide.category}</span>
+            <h2 class="slide-title">${slide.title}</h2>
+          </div>
+          <span class="sketch-badge ${slide.badge}">Slide ${slide.num} / ${SLIDES_DATA.length}</span>
+        </div>
+        <div>
+          ${slide.content}
+        </div>
+      `;
+
+      // Update Controls
+      document.getElementById("slideProgressText").textContent = `Slide ${index} of ${SLIDES_DATA.length}`;
+      document.getElementById("slideProgressFill").style.width = `${(index / SLIDES_DATA.length) * 100}%`;
+      document.getElementById("prevSlideBtn").disabled = index === 1;
+      document.getElementById("nextSlideBtn").disabled = index === SLIDES_DATA.length;
+    }
+
+    function jumpToSlide(num) {
+      currentSlide = num;
+      renderSlide(currentSlide);
+      closeOverviewModal();
+    }
+
+    function openOverviewModal() {
+      document.getElementById("overviewModal").classList.add("open");
+    }
+    function closeOverviewModal() {
+      document.getElementById("overviewModal").classList.remove("open");
+    }
+
+    /* --- FLASHCARD ENGINE --- */
+    function initFlashcards() {
+      renderFlashcard();
+
+      const card = document.getElementById("activeFlashcard");
+      card.addEventListener("click", toggleFlip);
+
+      document.getElementById("fcFlipBtn").addEventListener("click", toggleFlip);
+      document.getElementById("fcPrevBtn").addEventListener("click", () => {
+        if (currentFlashcard > 0) {
+          currentFlashcard--;
+          isFlipped = false;
+          renderFlashcard();
+        }
+      });
+      document.getElementById("fcNextBtn").addEventListener("click", () => {
+        if (currentFlashcard < FLASHCARDS_DATA.length - 1) {
+          currentFlashcard++;
+          isFlipped = false;
+          renderFlashcard();
+        }
+      });
+    }
+
+    function toggleFlip() {
+      isFlipped = !isFlipped;
+      document.getElementById("activeFlashcard").classList.toggle("flipped", isFlipped);
+    }
+
+    function renderFlashcard() {
+      const fc = FLASHCARDS_DATA[currentFlashcard];
+      const card = document.getElementById("activeFlashcard");
+      card.classList.remove("flipped");
+      isFlipped = false;
+
+      document.getElementById("fcCategory").textContent = fc.category;
+      document.getElementById("fcProgress").textContent = `Card ${currentFlashcard + 1} of ${FLASHCARDS_DATA.length}`;
+      document.getElementById("fcQuestion").textContent = fc.q;
+      document.getElementById("fcAnswer").textContent = fc.a;
+
+      document.getElementById("fcPrevBtn").disabled = currentFlashcard === 0;
+      document.getElementById("fcNextBtn").disabled = currentFlashcard === FLASHCARDS_DATA.length - 1;
+    }
+
+    /* --- QUIZ ENGINE --- */
+    function initQuiz() {
+      const container = document.getElementById("quizContainer");
+      container.innerHTML = QUIZ_DATA.map((q, idx) => `
+        <div class="quiz-card" id="quizCard${idx}">
+          <div class="sketch-badge badge-blue">QUESTION ${idx + 1} OF ${QUIZ_DATA.length}</div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--ink-blue); margin: 0.75rem 0;">${q.question}</h3>
+          
+          <div class="quiz-options">
+            ${q.options.map((opt, optIdx) => `
+              <button class="quiz-opt-btn" onclick="selectQuizOption(${idx}, ${optIdx})" id="quizOpt_${idx}_${optIdx}">
+                <span style="font-weight: 700;">${String.fromCharCode(65 + optIdx)}.</span>
+                <span>${opt}</span>
+              </button>
+            `).join("")}
+          </div>
+
+          <div class="quiz-feedback" id="quizFeedback${idx}">
+            <div style="font-weight: 800; margin-bottom: 0.25rem;" id="quizStatus${idx}"></div>
+            <div id="quizExp${idx}" style="color: var(--pencil-grey);"></div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function selectQuizOption(qIdx, optIdx) {
+      if (quizAnswers[qIdx] !== undefined) return; // Already answered
+      quizAnswers[qIdx] = optIdx;
+
+      const q = QUIZ_DATA[qIdx];
+      const isCorrect = optIdx === q.correct;
+      const feedback = document.getElementById(`quizFeedback${qIdx}`);
+      const status = document.getElementById(`quizStatus${qIdx}`);
+      const exp = document.getElementById(`quizExp${qIdx}`);
+
+      // Style selected button
+      const selectedBtn = document.getElementById(`quizOpt_${qIdx}_${optIdx}`);
+      const correctBtn = document.getElementById(`quizOpt_${qIdx}_${q.correct}`);
+
+      if (isCorrect) {
+        selectedBtn.classList.add("correct");
+        status.innerHTML = "✅ Correct!";
+        status.style.color = "#15803D";
+      } else {
+        selectedBtn.classList.add("wrong");
+        correctBtn.classList.add("correct");
+        status.innerHTML = `❌ Incorrect (Correct answer is ${String.fromCharCode(65 + q.correct)})`;
+        status.style.color = "#D12828";
+      }
+
+      exp.textContent = q.explanation;
+      feedback.style.display = "block";
+
+      // Disable all buttons for this question
+      for (let i = 0; i < q.options.length; i++) {
+        document.getElementById(`quizOpt_${qIdx}_${i}`).disabled = true;
+      }
+
+      checkQuizCompletion();
+    }
+
+    function checkQuizCompletion() {
+      if (Object.keys(quizAnswers).length === QUIZ_DATA.length) {
+        let score = 0;
+        QUIZ_DATA.forEach((q, idx) => {
+          if (quizAnswers[idx] === q.correct) score++;
+        });
+
+        const finalWrap = document.getElementById("quizFinalWrap");
+        finalWrap.innerHTML = `
+          <div class="sketch-card" style="background: var(--highlighter-yellow); text-align: center; padding: 2rem;">
+            <h3 style="font-size: 1.6rem; font-weight: 800; color: var(--ink-blue);">🎉 Quiz Completed!</h3>
+            <p style="font-size: 1.25rem; font-weight: 700; color: var(--pencil-grey); margin: 0.5rem 0;">
+              Your Score: ${score} / ${QUIZ_DATA.length} (${Math.round((score / QUIZ_DATA.length) * 100)}%)
+            </p>
+            <p style="font-size: 0.95rem; color: var(--pencil-light); margin-bottom: 1.25rem;">
+              ${score >= 8 ? "Outstanding mastery of JDBC from first principles!" : "Great effort! Review the flashcards and try again."}
+            </p>
+            <button class="sim-btn" onclick="resetQuiz()">🔄 Retake Quiz</button>
+          </div>
+        `;
+      }
+    }
+
+    function resetQuiz() {
+      quizAnswers = {};
+      initQuiz();
+      document.getElementById("quizFinalWrap").innerHTML = "";
+    }
+
+    /* --- INTERACTIVE SIMULATORS --- */
+    function initSimulators() {
+      // Simulator 1: SQL Injection Lab
+      const sqlInput = document.getElementById("simSqlInput");
+      const sqlPresets = document.getElementById("simSqlPresets");
+      const btnStmt = document.getElementById("btnModeStatement");
+      const btnPrep = document.getElementById("btnModePrepared");
+      let isPreparedStatement = false;
+
+      function updateSqlSim() {
+        const val = sqlInput.value;
+        const rendered = document.getElementById("simSqlRendered");
+        const alertBox = document.getElementById("simSqlStatusAlert");
+        const title = document.getElementById("simSqlStatusTitle");
+        const desc = document.getElementById("simSqlStatusDesc");
+
+        if (!isPreparedStatement) {
+          rendered.textContent = `SELECT * FROM students WHERE email = '${val}';`;
+          if (val.includes("' OR '1'='1") || val.includes("admin' --") || val.includes("DROP TABLE")) {
+            alertBox.className = "callout callout-danger";
+            title.textContent = "🚨 CRITICAL BREACH: SQL Injection Successful!";
+            desc.innerHTML = `The plain Statement evaluated <code>${escapeHtml(val)}</code> as active SQL tokens. Data filters bypassed!`;
+          } else {
+            alertBox.className = "callout callout-note";
+            title.textContent = "ℹ️ Normal Query Execution";
+            desc.textContent = "Executing plain query. If input ever contains quotes, syntax errors or breaches occur.";
+          }
+        } else {
+          rendered.textContent = `PreparedStatement:\nQuery Plan: SELECT * FROM students WHERE email = ?;\nBound Literal: ? = [${val}]`;
+          alertBox.className = "callout callout-tip";
+          title.textContent = "🛡️ SECURE: PreparedStatement Protected!";
+          desc.innerHTML = `The database treated <code>${escapeHtml(val)}</code> strictly as an innocent string literal. No SQL grammar was altered.`;
+        }
+      }
+
+      btnStmt.addEventListener("click", () => {
+        isPreparedStatement = false;
+        btnStmt.classList.add("active");
+        btnPrep.classList.remove("active");
+        updateSqlSim();
+      });
+
+      btnPrep.addEventListener("click", () => {
+        isPreparedStatement = true;
+        btnPrep.classList.add("active");
+        btnStmt.classList.remove("active");
+        updateSqlSim();
+      });
+
+      sqlInput.addEventListener("input", updateSqlSim);
+      sqlPresets.addEventListener("change", (e) => {
+        sqlInput.value = e.target.value;
+        updateSqlSim();
+      });
+
+      // Simulator 2: ResultSet Cursor Stepper
+      const cursorRows = [
+        { id: "simRowBefore", status: "[beforeFirst] Pointer before Row 1" },
+        { id: "simRow1", status: "Row 1 (Active)", pojo: `Student { id: 101L, name: "Aditya", email: "aditya@gmail.com", age: 28 }` },
+        { id: "simRow2", status: "Row 2 (Active)", pojo: `Student { id: 102L, name: "Rohit Negi", email: "rohit@gmail.com", age: 26 }` },
+        { id: "simRow3", status: "Row 3 (Active)", pojo: `Student { id: 103L, name: "Sneha Rao", email: "sneha@gmail.com", age: 24 }` },
+        { id: "simRowAfter", status: "[afterLast] Past end of ResultSet (next() = false)" }
+      ];
+      let cursorIdx = 0;
+
+      function updateCursorTable() {
+        cursorRows.forEach((r, idx) => {
+          const el = document.getElementById(r.id);
+          const statusCell = el.querySelector(".status-cell");
+          if (idx === cursorIdx) {
+            el.classList.add("active-row");
+            if (statusCell) statusCell.innerHTML = `<strong>CURSOR</strong>`;
+          } else {
+            el.classList.remove("active-row");
+            if (statusCell) statusCell.innerHTML = ``;
+          }
+        });
+
+        const pojoEl = document.getElementById("simPojoOutput");
+        if (cursorIdx === 0) {
+          pojoEl.textContent = "// Cursor at beforeFirst: must invoke rs.next() first!";
+        } else if (cursorIdx === 4) {
+          pojoEl.textContent = "// Traversal complete! rs.next() returned false.";
+        } else {
+          pojoEl.textContent = cursorRows[cursorIdx].pojo;
+        }
+      }
+
+      document.getElementById("cursorNextBtn").addEventListener("click", () => {
+        if (cursorIdx < cursorRows.length - 1) {
+          cursorIdx++;
+          updateCursorTable();
+        }
+      });
+      document.getElementById("cursorResetBtn").addEventListener("click", () => {
+        cursorIdx = 0;
+        updateCursorTable();
+      });
+
+      // Simulator 3: Bank Transfer Transaction Atomicity
+      let alice = 1000;
+      let bob = 500;
+      const aliceEl = document.getElementById("simAliceBal");
+      const bobEl = document.getElementById("simBobBal");
+      const logEl = document.getElementById("simTxLog");
+
+      document.getElementById("btnSimulateTxSuccess").addEventListener("click", () => {
+        logEl.textContent = "1. conn.setAutoCommit(false)\n" +
+          "2. UPDATE accounts SET balance = balance - 200 WHERE id = 1 (Alice: $800)\n" +
+          "3. UPDATE accounts SET balance = balance + 200 WHERE id = 2 (Bob: $700)\n" +
+          "4. conn.commit() executed!\n" +
+          "SUCCESS: Both operations committed atomically!";
+        alice = 800;
+        bob = 700;
+        aliceEl.textContent = `$${alice}`;
+        bobEl.textContent = `$${bob}`;
+      });
+
+      document.getElementById("btnSimulateTxFail").addEventListener("click", () => {
+        logEl.textContent = "1. conn.setAutoCommit(false)\n" +
+          "2. UPDATE accounts SET balance = balance - 200 WHERE id = 1 (Alice: $800 in memory)\n" +
+          "3. ⚡ NETWORK CRASH BEFORE CREDIT! SQLException thrown!\n" +
+          "4. CATCH BLOCK TRIGGERED: conn.rollback()\n" +
+          "ROLLBACK APPLIED: Alice balance restored to original state! Zero money lost!";
+        alice = 1000;
+        bob = 500;
+        aliceEl.textContent = `$${alice}`;
+        bobEl.textContent = `$${bob}`;
+      });
+
+      document.getElementById("btnResetTx").addEventListener("click", () => {
+        alice = 1000;
+        bob = 500;
+        aliceEl.textContent = `$${alice}`;
+        bobEl.textContent = `$${bob}`;
+        logEl.textContent = "Balances reset. Ready.";
+      });
+    }
+
+    /* --- NOTEPAD DRAWER --- */
+    function initNotepad() {
+      const drawer = document.getElementById("notepadDrawer");
+      const overlay = document.getElementById("notepadOverlay");
+      const area = document.getElementById("scratchpadArea");
+
+      // Load from localStorage
+      area.value = localStorage.getItem("java_jdbc_notes") || "";
+
+      area.addEventListener("input", () => {
+        localStorage.setItem("java_jdbc_notes", area.value);
+      });
+
+      function openDrawer() {
+        drawer.classList.add("open");
+        overlay.classList.add("open");
+      }
+      function closeDrawer() {
+        drawer.classList.remove("open");
+        overlay.classList.remove("open");
+      }
+
+      document.getElementById("openNotepadBtn").addEventListener("click", openDrawer);
+      document.getElementById("closeNotepadBtn").addEventListener("click", closeDrawer);
+      overlay.addEventListener("click", closeDrawer);
+
+      document.getElementById("clearNotesBtn").addEventListener("click", () => {
+        if (confirm("Clear your notes?")) {
+          area.value = "";
+          localStorage.removeItem("java_jdbc_notes");
+        }
+      });
+
+      document.getElementById("downloadNotesBtn").addEventListener("click", () => {
+        const blob = new Blob([area.value], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "java-jdbc-scratchpad.txt";
+        a.click();
+      });
+    }
+
+    /* --- SEARCH MODAL ENGINE --- */
+    function initSearch() {
+      const modal = document.getElementById("searchModal");
+      const input = document.getElementById("searchQueryInput");
+      const list = document.getElementById("searchResultsList");
+
+      function openSearch() {
+        modal.classList.add("open");
+        input.focus();
+      }
+      function closeSearch() {
+        modal.classList.remove("open");
+        input.value = "";
+      }
+
+      document.getElementById("openSearchBtn").addEventListener("click", openSearch);
+      document.getElementById("closeSearchBtn").addEventListener("click", closeSearch);
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeSearch();
+      });
+
+      input.addEventListener("input", () => {
+        const q = input.value.trim().toLowerCase();
+        if (q.length < 2) {
+          list.innerHTML = `<p style="font-size: 0.85rem; color: var(--pencil-light); text-align: center; padding: 1.5rem 0;">Type at least 2 characters to search...</p>`;
+          return;
+        }
+
+        const results = [];
+
+        // Search Slides
+        SLIDES_DATA.forEach(s => {
+          if (s.title.toLowerCase().includes(q) || s.content.toLowerCase().includes(q)) {
+            results.push({ type: "Slide", title: `Slide ${s.num}: ${s.title}`, action: () => { switchView("presentation"); jumpToSlide(s.num); closeSearch(); } });
+          }
+        });
+
+        // Search Flashcards
+        FLASHCARDS_DATA.forEach((fc, idx) => {
+          if (fc.q.toLowerCase().includes(q) || fc.a.toLowerCase().includes(q)) {
+            results.push({ type: "Flashcard", title: `Flashcard: ${fc.q}`, action: () => { switchView("flashcards"); currentFlashcard = idx; renderFlashcard(); closeSearch(); } });
+          }
+        });
+
+        // Search Quiz
+        QUIZ_DATA.forEach(qz => {
+          if (qz.question.toLowerCase().includes(q) || qz.explanation.toLowerCase().includes(q)) {
+            results.push({ type: "Quiz", title: `Quiz: ${qz.question.substring(0, 60)}...`, action: () => { switchView("quiz"); closeSearch(); } });
+          }
+        });
+
+        if (results.length === 0) {
+          list.innerHTML = `<p style="font-size: 0.85rem; color: var(--pencil-light); text-align: center; padding: 1.5rem 0;">No matching notes found for "${escapeHtml(q)}".</p>`;
+          return;
+        }
+
+        list.innerHTML = results.slice(0, 8).map(r => `
+          <div class="overview-item" style="margin-bottom: 0.5rem;" onclick="(${r.action})()">
+            <span class="sketch-badge badge-blue">${r.type}</span>
+            <div style="font-weight: 700; color: var(--ink-blue); margin-top: 0.25rem;">${r.title}</div>
+          </div>
+        `).join("");
+      });
+    }
+
+    /* --- FULLSCREEN & KEYBOARD SHORTCUTS --- */
+    function initKeyboardShortcuts() {
+      // Fullscreen toggle
+      document.getElementById("toggleFullscreenBtn").addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      });
+
+      window.addEventListener("keydown", (e) => {
+        // If typing in input or textarea, ignore shortcuts
+        if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) {
+          if (e.key === "Escape") {
+            document.getElementById("searchModal").classList.remove("open");
+            document.getElementById("notepadDrawer").classList.remove("open");
+            document.getElementById("notepadOverlay").classList.remove("open");
+            document.getElementById("overviewModal").classList.remove("open");
+          }
+          return;
+        }
+
+        if (e.key === "/") {
+          e.preventDefault();
+          document.getElementById("searchModal").classList.add("open");
+          document.getElementById("searchQueryInput").focus();
+        } else if (e.key === "n" || e.key === "N") {
+          e.preventDefault();
+          document.getElementById("notepadDrawer").classList.toggle("open");
+          document.getElementById("notepadOverlay").classList.toggle("open");
+        } else if (e.key === "f" || e.key === "F") {
+          e.preventDefault();
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          } else {
+            document.exitFullscreen().catch(() => {});
+          }
+        } else if (e.key === "ArrowLeft") {
+          const presActive = document.getElementById("presentation-view").classList.contains("active");
+          if (presActive && currentSlide > 1) {
+            currentSlide--;
+            renderSlide(currentSlide);
+          }
+        } else if (e.key === "ArrowRight") {
+          const presActive = document.getElementById("presentation-view").classList.contains("active");
+          if (presActive && currentSlide < SLIDES_DATA.length) {
+            currentSlide++;
+            renderSlide(currentSlide);
+          }
+        } else if (e.key === " " || e.code === "Space") {
+          const fcActive = document.getElementById("flashcards-view").classList.contains("active");
+          if (fcActive) {
+            e.preventDefault();
+            toggleFlip();
+          }
+        } else if (e.key === "Escape") {
+          document.getElementById("searchModal").classList.remove("open");
+          document.getElementById("notepadDrawer").classList.remove("open");
+          document.getElementById("notepadOverlay").classList.remove("open");
+          document.getElementById("overviewModal").classList.remove("open");
+        }
+      });
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>

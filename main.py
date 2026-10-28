@@ -189,6 +189,219 @@ SYSTEM_DESIGN_CHAPTERS_DB: List[Chapter] = [
     )
 ]
 
+# Java & JVM Curriculum (First Principles, Low-Level Runtime, Memory & Concurrency)
+JAVA_NOTES_INFO = PlaylistInfo(
+    title="Java & JVM from First Principles",
+    creator="JVM Architecture & Systems Engineering",
+    playlist_id="java-notes-first-principles",
+    playlist_url="https://youtube.com/playlist?list=PLui3EUkuMTPgZcV0QhQrOcwMPcBCcd_Q1",
+    total_chapters=15
+)
+
+JAVA_NOTES_CHAPTERS_DB: List[Chapter] = [
+    Chapter(
+        id=1,
+        title="JVM Architecture & Runtime Memory Model",
+        category="jvm",
+        folder="jvm_architecture",
+        summary="Deconstructing the Java Virtual Machine: ClassLoader subsystem (Load, Link, Initialize), Execution Engine (Interpreter, Tiered JIT C1/C2, Garbage Collector), and Runtime Data Areas (Heap, Metaspace, Stack Frames, PC Registers, Native Stacks).",
+        takeaways=[
+            "Heap (Young Eden/Survivor vs Old Tenured) vs Non-Heap Metaspace (Native OS memory)",
+            "Stack Frame anatomy: Local Variable Array, Operand Stack, and Frame Data",
+            "Interpreter vs JIT Tiered Compilation (C1 Client with OSR vs C2 Server optimizing compiler)",
+            "Compressed OOPs (Ordinary Object Pointers) and 32GB heap threshold"
+        ],
+        has_transcript=True,
+        has_interactive_notes=True,
+        status="completed"
+    ),
+    Chapter(
+        id=2,
+        title="ClassLoader Subsystem & Bytecode Verification",
+        category="jvm",
+        folder="classloader_subsystem",
+        summary="How Java loads `.class` files into runtime memory: Delegation hierarchy (Bootstrap, Platform, Application), Custom ClassLoaders, bytecode verification security passes, and ClassNotFoundException vs NoClassDefFoundError.",
+        takeaways=[
+            "Parent delegation principle and classpath shadowing",
+            "Bytecode 4-pass verification (Type safety, stack boundary proofs)",
+            "Dynamic class unloading when ClassLoader instance becomes unreachable"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=3,
+        title="Java Memory Model (JMM) & volatile Internals",
+        category="concurrency",
+        folder="java_memory_model",
+        summary="Understanding hardware cache lines, CPU store buffers, and JMM Happens-Before ordering. Hardware memory barriers (LoadLoad, LoadStore, StoreStore, StoreLoad) and why volatile prevents instruction reordering and forces cache coherence (MESI).",
+        takeaways=[
+            "CPU cache coherence (MESI protocol) & store buffer latency",
+            "Happens-Before formal guarantees and memory fences (MFENCE)",
+            "Volatile write: StoreStore + StoreLoad fence emission in assembly"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=4,
+        title="Concurrency: Locks, Synchronized & AQS",
+        category="concurrency",
+        folder="locks_and_aqs",
+        summary="Deep dive into Java thread synchronization: Object header Mark Word state, synchronized monitor lock inflation (Biased -> Thin/Spinlock -> Fat/OS Mutex), and AbstractQueuedSynchronizer (AQS) FIFO state queue behind ReentrantLock and CountDownLatch.",
+        takeaways=[
+            "Mark Word bits: 01 (Unlock/Biased) -> 00 (Lightweight) -> 10 (Heavyweight OS Mutex)",
+            "AQS state `volatile int state` and lock-free CAS enqueueing",
+            "Fair vs Non-Fair lock acquisition throughput trade-offs"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=5,
+        title="Virtual Threads & Project Loom (Java 21)",
+        category="concurrency",
+        folder="virtual_threads",
+        summary="Next-generation high-throughput concurrency: 1:1 OS platform threads vs M:N Virtual Threads. Continuation stacks mounted on Carrier Threads (`ForkJoinPool`), unblocking 1,000,000+ concurrent network connections with synchronous blocking syntax.",
+        takeaways=[
+            "Platform OS thread (~1MB stack) vs Virtual Thread (~few KB continuation chunk)",
+            "Yielding & parking continuations on socket read/write non-blocking calls",
+            "Thread pinning hazards (synchronized blocks vs ReentrantLock)"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=6,
+        title="Garbage Collection Deep Dive: G1, ZGC & Shenandoah",
+        category="jvm",
+        folder="garbage_collection",
+        summary="Generational hypothesis, stop-the-world (STW) pauses, card tables & remember sets, and low-latency collectors. G1 region mixed collections vs ZGC colored pointers and load barriers enabling sub-millisecond pauses on terabyte heaps.",
+        takeaways=[
+            "Weak Generational Hypothesis: 95%+ objects die young in Eden",
+            "G1 Regional heap, humongous objects, and target pause time prediction",
+            "ZGC colored pointer reference bits & concurrent load barrier self-healing"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=7,
+        title="Java Database Connectivity (JDBC) from Scratch",
+        category="frameworks",
+        folder="java_jdbc",
+        summary="Connecting raw Java to relational databases: Type 4 Drivers, DriverManager, Connection, Statement vs PreparedStatement, SQL Injection mechanics, ResultSet cursor navigation, try-with-resources, Transactions (commit/rollback), and HikariCP connection pooling.",
+        takeaways=[
+            "Type 4 pure Java network socket driver & java.sql.* interface polymorphism",
+            "PreparedStatement precompilation & parameter isolation eliminating SQL Injection",
+            "ResultSet 1-based indexing & cursor traversal lifecycle (beforeFirst to afterLast)",
+            "Manual ACID transactions: setAutoCommit(false), commit(), and rollback()"
+        ],
+        has_transcript=True,
+        has_interactive_notes=True,
+        status="completed"
+    ),
+    Chapter(
+        id=8,
+        title="Collections Internals: HashMap & ConcurrentHashMap",
+        category="collections",
+        folder="collections_internals",
+        summary="Under the hood of `java.util`: HashMap array of bins, bitwise hash spreading `(h ^ (h >>> 16)) & (n - 1)`, collision resolution, treeification to Red-Black Tree at 8 entries, and ConcurrentHashMap striped bin lock-free CAS updates.",
+        takeaways=[
+            "Power-of-two table sizing and bitwise modulo index calculation",
+            "Treeify threshold = 8, untreeify = 6, and Poisson distribution proof",
+            "ConcurrentHashMap: `Node` volatile value, CAS head initialization, and `synchronized(head)`"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=9,
+        title="Generics Internals, Type Erasure & Wildcards",
+        category="collections",
+        folder="generics_type_erasure",
+        summary="Why Java generics exist only at compile-time: Type erasure to `Object` or bounds, synthetic bridge methods, heap pollution warnings, reifiable vs non-reifiable types, and the PECS rule (Producer Extends, Consumer Super).",
+        takeaways=[
+            "Type erasure replacing type parameters with leftmost bound",
+            "Bridge methods generated by compiler to maintain polymorphic overrides",
+            "PECS principle: `List<? extends T>` for read, `List<? super T>` for write"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=10,
+        title="Java NIO, Netty & Non-Blocking Sockets",
+        category="frameworks",
+        folder="java_nio_netty",
+        summary="Transition from blocking BIO `InputStream` per thread to Non-blocking NIO: `Channel`, `ByteBuffer` (Direct off-heap vs Heap), OS multiplexing (`epoll` / `kqueue` Selectors), and Netty Reactor pattern event loops.",
+        takeaways=[
+            "DirectByteBuffer off-heap memory and zero-copy OS kernel writes",
+            "Selector multiplexer monitoring multiple SocketChannel file descriptors",
+            "Netty ByteBuf reference counting and pooling to prevent GC churn"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=11,
+        title="Reflection, Dynamic Proxies & Bytecode Manipulation",
+        category="frameworks",
+        folder="reflection_proxies",
+        summary="Examining runtime metaprogramming: `java.lang.reflect`, Reflection method accessor inflation to bytecode, JDK Dynamic Proxies (`InvocationHandler`) vs CGLIB/ByteBuddy ASM subclassing.",
+        takeaways=[
+            "JDK Dynamic Proxy requiring interfaces vs CGLIB subclassing",
+            "JVM reflection inflation: JNI native call switches to generated bytecode after 15 invocations",
+            "SecurityManager deprecation and JVM module boundaries (`--add-opens`)"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=12,
+        title="Spring Framework Internals: IoC & Bean Lifecycle",
+        category="frameworks",
+        folder="spring_internals",
+        summary="Deconstructing the enterprise standard: `BeanFactory` and `ApplicationContext`, Bean definition parsing, circular dependency resolution using Spring 3-level singleton cache, and BeanPostProcessor proxy wrapping for `@Transactional`.",
+        takeaways=[
+            "3-Level Singleton Cache: `singletonObjects`, `earlySingletonObjects`, `singletonFactories`",
+            "Bean lifecycle: Instantiate -> Populate -> BeanPostProcessor -> Initialize",
+            "Dynamic proxy self-invocation bug: why calling `@Transactional` internally fails"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=13,
+        title="High-Performance Java: JIT Inlining & JMH",
+        category="jvm",
+        folder="jit_jmh_performance",
+        summary="How HotSpot turns bytecode into blazing machine code: Inlining thresholds (`-XX:MaxInlineLevel`), escape analysis and scalar replacement, loop unrolling, and writing proper microbenchmarks with JMH to avoid Dead Code Elimination.",
+        takeaways=[
+            "Method inlining: eliminates call stack overhead and enables dead-code pruning",
+            "Escape analysis: stack allocating objects that don't escape method scope",
+            "JMH Blackhole and compiler warmup loops to prevent false optimizations"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=14,
+        title="Streams API Internals & Lambda Desugaring",
+        category="collections",
+        folder="streams_lambdas",
+        summary="How functional idioms work on the JVM: `invokedynamic` opcode, bootstrap methods (`LambdaMetafactory`), avoiding anonymous inner class overhead, and `Spliterator` pipeline chaining with lazy evaluation.",
+        takeaways=[
+            "`invokedynamic` generates private static method and call site linkage",
+            "Stream operations are lazy: intermediate ops return StatelessOp/StatefulOp pipelines",
+            "Parallel streams use common `ForkJoinPool.commonPool()` work-stealing"
+        ],
+        status="upcoming"
+    ),
+    Chapter(
+        id=15,
+        title="GraalVM Native Image & Ahead-of-Time (AOT)",
+        category="frameworks",
+        folder="graalvm_native_image",
+        summary="AOT compilation for instant startup and low memory: Closed-world analysis, reachability metadata for reflection/resources, SubstrateVM runtime, and comparing JIT peak throughput vs Native Image instant warm-up.",
+        takeaways=[
+            "Closed-world assumption: all reachable classes compiled at build time",
+            "Cold start drop from 2-3 seconds to sub-20ms for serverless/microservices",
+            "Trade-off: No runtime JIT speculative profiling optimizations"
+        ],
+        status="upcoming"
+    )
+]
+
 CHAPTERS_DB: List[Chapter] = [
     Chapter(
         id=1,
@@ -534,6 +747,36 @@ async def serve_url_shortener_masterclass(request: Request):
         context={"request": request}
     )
 
+@app.get("/java_notes", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/java_notes/", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/java-notes", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/java-notes/", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/java_notes/index.html", response_class=HTMLResponse, tags=["Pages"])
+async def serve_java_notes_page(request: Request):
+    """Serves the sketch-note styled Java & JVM Notes landing page with interactive simulators."""
+    return templates.TemplateResponse(
+        request=request,
+        name="java_notes.html",
+        context={
+            "request": request,
+            "chapters": JAVA_NOTES_CHAPTERS_DB,
+            "playlist": JAVA_NOTES_INFO
+        }
+    )
+
+@app.get("/java_jdbc", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/java_jdbc/", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/java-jdbc", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/java-jdbc/", response_class=HTMLResponse, tags=["Pages"])
+@app.get("/java_jdbc/index.html", response_class=HTMLResponse, tags=["Pages"])
+async def serve_java_jdbc_masterclass(request: Request):
+    """Serves Chapter 07 / Java Database Connectivity (JDBC) from Scratch complete interactive masterclass."""
+    return templates.TemplateResponse(
+        request=request,
+        name="java_jdbc.html",
+        context={"request": request}
+    )
+
 @app.exception_handler(404)
 async def custom_404_handler(request: Request, exc: HTTPException):
     """Handles 404 errors with JSON for API endpoints and custom sketch template for web pages."""
@@ -606,6 +849,12 @@ async def get_transcript_text(chapter_name: str):
             BASE_DIR / "transcript" / "url_shortner.md",
             BASE_DIR / "url_shortner.md"
         ]
+    elif clean_name in ["java_jdbc", "javajdbc", "jdbc", "7"]:
+        candidates = [
+            BASE_DIR / "transcript" / "java" / "java_jdbc.md",
+            BASE_DIR / "transcript" / "java_jdbc.md",
+            BASE_DIR / "java_jdbc.md"
+        ]
     else:
         candidates = []
 
@@ -637,6 +886,21 @@ async def get_system_design_chapter_by_id(chapter_id: int):
             return ch
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"System Design Chapter {chapter_id} not found")
 
+# --- JAVA NOTES ENDPOINTS ---
+
+@app.get("/api/java-notes/chapters", response_model=List[Chapter], tags=["Java Notes"])
+async def get_java_notes_chapters():
+    """Returns all Java & JVM chapters."""
+    return JAVA_NOTES_CHAPTERS_DB
+
+@app.get("/api/java-notes/chapters/{chapter_id}", response_model=Chapter, tags=["Java Notes"])
+async def get_java_notes_chapter_by_id(chapter_id: int):
+    """Returns details for a single Java Notes chapter by ID."""
+    for ch in JAVA_NOTES_CHAPTERS_DB:
+        if ch.id == chapter_id:
+            return ch
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Java Notes Chapter {chapter_id} not found")
+
 @app.get("/api/health", tags=["Status"])
 async def health_check():
     """Health check endpoint confirming FastAPI server status."""
@@ -646,6 +910,7 @@ async def health_check():
         "version": "1.0.0",
         "total_backend_chapters": len(CHAPTERS_DB),
         "total_system_design_chapters": len(SYSTEM_DESIGN_CHAPTERS_DB),
+        "total_java_notes_chapters": len(JAVA_NOTES_CHAPTERS_DB),
         "playlist": PLAYLIST_INFO.playlist_url
     }
 
